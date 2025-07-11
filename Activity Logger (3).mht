@@ -1,0 +1,131 @@
+From: <Saved by Blink>
+Snapshot-Content-Location: https://www.pythonanywhere.com/user/Aabbeell/files/home/Aabbeell/devsite/FW_player_view/chl.htmlchl.html
+Subject: Activity Logger
+Date: Fri, 11 Jul 2025 20:32:36 +0000
+MIME-Version: 1.0
+Content-Type: multipart/related;
+	type="text/html";
+	boundary="----MultipartBoundary--SMN0Ookh40SpGxnHyzjavL6Mk9n8WSxhrE9ZbaVyL4----"
+
+
+------MultipartBoundary--SMN0Ookh40SpGxnHyzjavL6Mk9n8WSxhrE9ZbaVyL4----
+Content-Type: text/html
+Content-ID: <frame-B836C7FBAFB849CF9D2C91324FF0E448@mhtml.blink>
+Content-Transfer-Encoding: binary
+Content-Location: https://www.pythonanywhere.com/user/Aabbeell/files/home/Aabbeell/devsite/FW_player_view/chl.htmlchl.html
+
+<!DOCTYPE html><html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><link rel="stylesheet" type="text/css" href="cid:css-22e18a74-14e0-4100-9bfe-4edf884e5630@mhtml.blink" />
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activity Logger</title>
+    
+</head>
+<body>
+
+    <div class="button-container">
+        <div id="exerciseButton" class="clickBox">Exercise done</div>
+        <div id="stellaButton" class="clickBox">Stella awake</div>
+    </div>
+
+    <h2>Logged Events</h2>
+    <div id="logContainer"><p>Exercise done: 2025-07-11T20:27:51.070Z</p><p>Stella Awake: 2025-07-11T20:27:52.543Z</p><p>Stella Awake: 2025-07-11T20:27:55.746Z</p><p>Stella Awake: 2025-07-11T20:27:55.957Z</p><p>Exercise done: 2025-07-11T20:27:56.496Z</p><p>Exercise done: 2025-07-11T20:27:56.707Z</p><p>Stella Awake: 2025-07-11T20:27:57.124Z</p><p>Exercise done: 2025-07-11T20:27:57.400Z</p><p>Stella Awake: 2025-07-11T20:27:57.663Z</p><p>Exercise done: 2025-07-11T20:27:57.854Z</p><p>Exercise done: 2025-07-11T20:27:58.325Z</p><p>Stella Awake: 2025-07-11T20:27:58.825Z</p><p>Exercise done: 2025-07-11T20:27:59.136Z</p><p>Exercise done: 2025-07-11T20:27:59.711Z</p><p>Exercise done: 2025-07-11T20:27:59.923Z</p><p>Exercise done: 2025-07-11T20:28:00.145Z</p><p>Exercise done: 2025-07-11T20:28:00.337Z</p><p>Exercise done: 2025-07-11T20:28:00.540Z</p></div>
+    <a id="downloadLink" href="blob:https://www.pythonanywhere.com/235302fa-af7f-4bcf-a627-5a81ab4004d5" download="activity_log.txt" style="display: block;">Download Log</a>
+
+    <div id="clearLogButton" class="clickBox">Clear Log</div> <div class="toggle-container"> <span>Calculate Per Day</span>
+        <label class="switch">
+            <input type="checkbox" id="calculationToggle">
+            <span class="slider round"></span>
+        </label>
+        <span>Calculate Per Second</span>
+    </div>
+
+    <div id="calculateButton" class="clickBox">Calculate Points</div>
+    <div id="pointsResult"></div>
+
+    <div id="dailyPointsTableContainer">
+        <h3>Points Breakdown</h3> <table id="dailyPointsTable">
+            <thead>
+                <tr>
+                    <th>Time Period</th> <th>Points</th>
+                </tr>
+            </thead>
+            <tbody>
+                </tbody>
+        </table>
+    </div>
+
+    
+
+
+</body></html>
+------MultipartBoundary--SMN0Ookh40SpGxnHyzjavL6Mk9n8WSxhrE9ZbaVyL4----
+Content-Type: text/css
+Content-Transfer-Encoding: binary
+Content-Location: cid:css-22e18a74-14e0-4100-9bfe-4edf884e5630@mhtml.blink
+
+@charset "utf-8";
+
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; display: flex; justify-content: center; align-items: center; flex-direction: column; padding: 50px 20px; background-color: rgb(244, 244, 249); color: rgb(51, 51, 51); }
+
+.button-container { display: flex; gap: 15px; margin-bottom: 20px; }
+
+.clickBox { width: 200px; height: 60px; color: white; display: flex; justify-content: center; align-items: center; cursor: pointer; border-radius: 8px; font-size: 18px; text-align: center; user-select: none; box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 6px; transition: background-color 0.2s, transform 0.2s; }
+
+.clickBox:active { transform: scale(0.98); }
+
+#exerciseButton { background-color: rgb(40, 167, 69); }
+
+#exerciseButton:hover { background-color: rgb(33, 136, 56); }
+
+#stellaButton { background-color: rgb(220, 53, 69); }
+
+#stellaButton:hover { background-color: rgb(200, 35, 51); }
+
+#calculateButton { background-color: rgb(255, 193, 7); color: rgb(33, 37, 41); font-weight: bold; margin-top: 20px; }
+
+#calculateButton:hover { background-color: rgb(224, 168, 0); }
+
+#clearLogButton { background-color: rgb(108, 117, 125); margin-top: 20px; }
+
+#clearLogButton:hover { background-color: rgb(90, 98, 104); }
+
+#logContainer { border: 1px solid rgb(221, 221, 221); border-radius: 8px; width: 90%; max-width: 400px; min-height: 100px; background-color: white; padding: 15px; }
+
+#downloadLink { display: none; margin-top: 20px; color: rgb(0, 123, 255); text-decoration: none; font-weight: bold; }
+
+#downloadLink:hover { text-decoration: underline; }
+
+#pointsResult { margin-top: 20px; font-size: 24px; font-weight: bold; color: rgb(0, 86, 179); }
+
+#dailyPointsTableContainer { margin-top: 30px; width: 90%; max-width: 400px; border: 1px solid rgb(221, 221, 221); border-radius: 8px; background-color: white; padding: 15px; display: none; }
+
+#dailyPointsTableContainer h3 { text-align: center; margin-top: 0px; color: rgb(0, 86, 179); }
+
+#dailyPointsTable { width: 100%; border-collapse: collapse; margin-top: 10px; }
+
+#dailyPointsTable th, #dailyPointsTable td { border: 1px solid rgb(238, 238, 238); padding: 8px; text-align: left; }
+
+#dailyPointsTable th { background-color: rgb(242, 242, 242); font-weight: bold; }
+
+#dailyPointsTable td { background-color: rgb(255, 255, 255); }
+
+.toggle-container { margin-top: 20px; display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: bold; color: rgb(85, 85, 85); }
+
+.switch { position: relative; display: inline-block; width: 45px; height: 24px; }
+
+.switch input { opacity: 0; width: 0px; height: 0px; }
+
+.slider { position: absolute; cursor: pointer; inset: 0px; background-color: rgb(204, 204, 204); transition: 0.4s; border-radius: 24px; }
+
+.slider::before { position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px; background-color: white; transition: 0.4s; border-radius: 50%; }
+
+input:checked + .slider { background-color: rgb(33, 150, 243); }
+
+input:focus + .slider { box-shadow: rgb(33, 150, 243) 0px 0px 1px; }
+
+input:checked + .slider::before { transform: translateX(21px); }
+
+.slider.round { border-radius: 24px; }
+
+.slider.round::before { border-radius: 50%; }
+------MultipartBoundary--SMN0Ookh40SpGxnHyzjavL6Mk9n8WSxhrE9ZbaVyL4------
