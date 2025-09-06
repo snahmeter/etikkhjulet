@@ -1,407 +1,209 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="no">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Activity Logger</title>
+    <title>Etikkhjulet for beslutninger</title>
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            padding: 50px 20px;
+            font-family: Arial, sans-serif;
             background-color: #f4f4f9;
             color: #333;
+            line-height: 1.6;
         }
-        .button-container {
-            display: flex;
-            gap: 15px;
+
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: #444;
+        }
+
+        .form-group {
             margin-bottom: 20px;
         }
-        .clickBox {
-            width: 200px;
-            height: 60px;
-            color: white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            border-radius: 8px;
-            font-size: 18px;
-            text-align: center;
-            user-select: none;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: background-color 0.2s, transform 0.2s;
-        }
-        .clickBox:active {
-            transform: scale(0.98);
-        }
 
-        #exerciseButton {
-            background-color: #28a745; /* Green */
-        }
-        #exerciseButton:hover {
-            background-color: #218838;
-        }
-
-        #stellaButton {
-            background-color: #dc3545; /* Red */
-        }
-        #stellaButton:hover {
-            background-color: #c82333;
-        }
-
-        #calculateButton {
-            background-color: #ffc107; /* Yellow */
-            color: #212529;
-            font-weight: bold;
-            margin-top: 20px;
-        }
-        #calculateButton:hover {
-            background-color: #e0a800;
-        }
-
-        #clearLogButton { /* New style for clear log button */
-            background-color: #6c757d; /* Grey */
-            margin-top: 20px;
-        }
-        #clearLogButton:hover {
-            background-color: #5a6268;
-        }
-
-        #logContainer {
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            width: 90%;
-            max-width: 400px;
-            min-height: 100px;
-            background-color: white;
-            padding: 15px;
-        }
-        #downloadLink {
-            display: none;
-            margin-top: 20px;
-            color: #007bff;
-            text-decoration: none;
+        label {
+            display: block;
+            margin-bottom: 8px;
             font-weight: bold;
         }
-        #downloadLink:hover {
-            text-decoration: underline;
-        }
-        #pointsResult {
-            margin-top: 20px;
-            font-size: 24px;
-            font-weight: bold;
-            color: #0056b3;
-        }
-        /* Styles for the points table */
-        #dailyPointsTableContainer {
-            margin-top: 30px;
-            width: 90%;
-            max-width: 400px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            background-color: white;
-            padding: 15px;
-            display: none; /* Hidden by default */
-        }
-        #dailyPointsTableContainer h3 {
-            text-align: center;
-            margin-top: 0;
-            color: #0056b3;
-        }
-        #dailyPointsTable {
+
+        textarea {
             width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-        #dailyPointsTable th, #dailyPointsTable td {
-            border: 1px solid #eee;
-            padding: 8px;
-            text-align: left;
-        }
-        #dailyPointsTable th {
-            background-color: #f2f2f2;
-            font-weight: bold;
-        }
-        #dailyPointsTable td {
-            background-color: #fff;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
         }
 
-        /* New styles for the toggle switch */
-        .toggle-container {
+        .wheel-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
             margin-top: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        }
+
+        .wheel-segment {
+            border: 1px solid #eee;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #fafafa;
+        }
+
+        .wheel-segment h3 {
+            margin-top: 0;
+        }
+
+        button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin-top: 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
             font-size: 16px;
-            font-weight: bold;
-            color: #555;
-        }
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 45px;
-            height: 24px;
-        }
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-        .slider {
-            position: absolute;
             cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            -webkit-transition: .4s;
-            transition: .4s;
-            border-radius: 24px;
+            transition: background-color 0.3s;
         }
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 16px;
-            width: 16px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            -webkit-transition: .4s;
-            transition: .4s;
-            border-radius: 50%;
+
+        button:hover {
+            background-color: #0056b3;
         }
-        input:checked + .slider {
-            background-color: #2196F3;
+
+        #report-output {
+            margin-top: 30px;
+            border-top: 2px solid #ccc;
+            padding-top: 20px;
         }
-        input:focus + .slider {
-            box-shadow: 0 0 1px #2196F3;
+
+        .hidden {
+            display: none;
         }
-        input:checked + .slider:before {
-            -webkit-transform: translateX(21px);
-            -ms-transform: translateX(21px);
-            transform: translateX(21px);
-        }
-        .slider.round {
-            border-radius: 24px;
-        }
-        .slider.round:before {
-            border-radius: 50%;
+
+        .report-segment-item {
+            margin-bottom: 10px;
         }
     </style>
 </head>
 <body>
+    <div class="container">
+        <h1>Hva gjør du? Etikkhjulet for beslutninger</h1>
+        <form id="decision-form">
+            <div class="form-group">
+                <label for="problem">Skriv inn din problemstilling:</label>
+                <textarea id="problem" rows="3" required></textarea>
+            </div>
+            <div class="wheel-container">
+                <div class="wheel-segment">
+                    <h3>Jus (Er det lovlig?)</h3>
+                    <textarea class="segment-input" data-segment="jus" rows="2"></textarea>
+                </div>
+                <div class="wheel-segment">
+                    <h3>Identitet (Er det i samsvar med verdiene våre?)</h3>
+                    <textarea class="segment-input" data-segment="identitet" rows="2"></textarea>
+                </div>
+                <div class="wheel-segment">
+                    <h3>Moral (Er det riktig?)</h3>
+                    <textarea class="segment-input" data-segment="moral" rows="2"></textarea>
+                </div>
+                <div class="wheel-segment">
+                    <h3>Omdømme (Beholder vi vår troverdighet? Tåler det offentlighet?)</h3>
+                    <textarea class="segment-input" data-segment="omdømme" rows="2"></textarea>
+                </div>
+                <div class="wheel-segment">
+                    <h3>Økonomi (Lønner det seg?)</h3>
+                    <textarea class="segment-input" data-segment="okonomi" rows="2"></textarea>
+                </div>
+                <div class="wheel-segment">
+                    <h3>Etikk (Lar det seg begrunne?)</h3>
+                    <textarea class="segment-input" data-segment="etikk" rows="2"></textarea>
+                </div>
+            </div>
+            <button type="submit">Generer rapport</button>
+        </form>
 
-    <div class="button-container">
-        <div id="exerciseButton" class="clickBox">Exercise done</div>
-        <div id="stellaButton" class="clickBox">Stella awake</div>
-    </div>
-
-    <h2>Logged Events</h2>
-    <div id="logContainer"></div>
-    <a id="downloadLink" href="#" download="activity_log.txt">Download Log</a>
-
-    <div id="clearLogButton" class="clickBox">Clear Log</div> <div class="toggle-container"> <span>Calculate Per Day</span>
-        <label class="switch">
-            <input type="checkbox" id="calculationToggle">
-            <span class="slider round"></span>
-        </label>
-        <span>Calculate Per Second</span>
-    </div>
-
-    <div id="calculateButton" class="clickBox">Calculate Points</div>
-    <div id="pointsResult"></div>
-
-    <div id="dailyPointsTableContainer">
-        <h3>Points Breakdown</h3> <table id="dailyPointsTable">
-            <thead>
-                <tr>
-                    <th>Time Period</th> <th>Points</th>
-                </tr>
-            </thead>
-            <tbody>
-                </tbody>
-        </table>
+        <div id="report-output" class="hidden">
+            <h2>Din beslutningsrapport</h2>
+            <p><strong>Problemstilling:</strong> <span id="report-problem"></span></p>
+            <div id="report-segments"></div>
+            <h3>Oppsummering</h3>
+            <p id="report-summary"></p>
+        </div>
     </div>
 
     <script>
-        // --- DOM Element References ---
-        const exerciseButton = document.getElementById('exerciseButton');
-        const stellaButton = document.getElementById('stellaButton');
-        const calculateButton = document.getElementById('calculateButton');
-        const clearLogButton = document.getElementById('clearLogButton'); // New
-        const calculationToggle = document.getElementById('calculationToggle'); // New
-        const logContainer = document.getElementById('logContainer');
-        const downloadLink = document.getElementById('downloadLink');
-        const pointsResult = document.getElementById('pointsResult');
-        const dailyPointsTableContainer = document.getElementById('dailyPointsTableContainer');
-        const dailyPointsTableBody = document.querySelector('#dailyPointsTable tbody');
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('decision-form');
+            const reportOutput = document.getElementById('report-output');
+            const reportProblem = document.getElementById('report-problem');
+            const reportSegments = document.getElementById('report-segments');
+            const reportSummary = document.getElementById('report-summary');
 
-        // --- State ---
-        let events = loadEvents(); // Changed to 'let' as it might be reassigned when cleared
+            form.addEventListener('submit', (event) => {
+                event.preventDefault();
 
-        // --- Event Listeners ---
-        exerciseButton.addEventListener('click', () => logEvent('Exercise done'));
-        stellaButton.addEventListener('click', () => logEvent('Stella Awake'));
-        calculateButton.addEventListener('click', calculatePoints);
-        clearLogButton.addEventListener('click', clearLog); // New
-        calculationToggle.addEventListener('change', calculatePoints); // Recalculate when toggle changes
+                const problemStatement = document.getElementById('problem').value.trim();
+                if (!problemStatement) {
+                    alert('Vennligst skriv inn en problemstilling.');
+                    return;
+                }
 
-        // --- Initial Display on Page Load ---
-        updateDisplay();
-        updateDownloadLink();
-
-        // --- Core Functions ---
-        function logEvent(message) {
-            const now = new Date();
-            const eventString = `${message}: ${now.toISOString()}`;
-            events.push(eventString);
-            saveEvents();
-            updateDisplay();
-            updateDownloadLink();
-            pointsResult.textContent = '';
-            dailyPointsTableContainer.style.display = 'none';
-        }
-
-        function updateDisplay() {
-            logContainer.innerHTML = '';
-            if (events.length === 0) {
-                const p = document.createElement('p');
-                p.textContent = "No events logged yet.";
-                p.style.textAlign = 'center';
-                p.style.color = '#888';
-                logContainer.appendChild(p);
-            } else {
-                events.forEach(event => {
-                    const p = document.createElement('p');
-                    p.textContent = event;
-                    logContainer.appendChild(p);
+                const segments = document.querySelectorAll('.segment-input');
+                const results = {};
+                
+                segments.forEach(segment => {
+                    const segmentName = segment.getAttribute('data-segment');
+                    results[segmentName] = segment.value.trim();
                 });
-            }
-        }
 
-        function updateDownloadLink() {
-            if (events.length > 0) {
-                downloadLink.style.display = 'block';
-                const fileContent = events.join('\n');
-                const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
-                const url = URL.createObjectURL(blob);
-                downloadLink.href = url;
-            } else {
-                downloadLink.style.display = 'none';
-            }
-        }
+                generateReport(problemStatement, results);
 
-        function calculatePoints() {
-            if (events.length === 0) {
-                pointsResult.textContent = "Total Points: 0";
-                dailyPointsTableContainer.style.display = 'none';
-                return;
-            }
-
-            const isPerSecond = calculationToggle.checked; // Check toggle state
-
-            const parsedEvents = events.map(eventString => {
-                const [type, dateString] = eventString.split(': ');
-                return { type: type.trim(), date: new Date(dateString.trim()) };
+                reportOutput.classList.remove('hidden');
             });
 
-            const eventsByPeriod = new Map(); // Can be by day or by second
-            parsedEvents.forEach(event => {
-                let periodKey;
-                if (isPerSecond) {
-                    periodKey = event.date.toISOString().slice(0, 19); // YYYY-MM-DDTHH:MM:SS
-                } else {
-                    periodKey = event.date.toISOString().slice(0, 10); // YYYY-MM-DD
+            function generateReport(problem, results) {
+                reportProblem.textContent = problem;
+                reportSegments.innerHTML = '';
+                
+                let summaryText = 'Dette er en oppsummering av dine vurderinger basert på etikkhjulet: \n';
+
+                for (const segment in results) {
+                    const segmentTitle = getSegmentTitle(segment);
+                    const segmentAnswer = results[segment] || 'Ingen kommentar';
+
+                    const segmentItem = document.createElement('div');
+                    segmentItem.classList.add('report-segment-item');
+                    segmentItem.innerHTML = `<strong>${segmentTitle}:</strong> ${segmentAnswer}`;
+                    reportSegments.appendChild(segmentItem);
+
+                    summaryText += `- ${segmentTitle}: ${segmentAnswer}\n`;
                 }
 
-                if (!eventsByPeriod.has(periodKey)) {
-                    eventsByPeriod.set(periodKey, []);
-                }
-                eventsByPeriod.get(periodKey).push(event);
-            });
-
-            let totalPoints = 0;
-            const periodPoints = [];
-
-            const sortedPeriodKeys = Array.from(eventsByPeriod.keys()).sort();
-
-            for (const periodKey of sortedPeriodKeys) {
-                const periodEvents = eventsByPeriod.get(periodKey);
-                let periodScore = 0;
-
-                const hasExercise = periodEvents.some(e => e.type === 'Exercise done');
-                if (hasExercise) {
-                    periodScore++;
-                }
-
-                const sortedPeriodEvents = [...periodEvents].sort((a, b) => a.date.getTime() - b.date.getTime());
-                const firstExerciseOfPeriod = sortedPeriodEvents.find(e => e.type === 'Exercise done');
-                const firstStellaAwakeOfPeriod = sortedPeriodEvents.find(e => e.type === 'Stella Awake');
-
-                if (firstExerciseOfPeriod && firstStellaAwakeOfPeriod) {
-                    if (firstExerciseOfPeriod.date < firstStellaAwakeOfPeriod.date) {
-                        periodScore++;
-                    }
-                }
-                totalPoints += periodScore;
-                periodPoints.push({ period: periodKey, points: periodScore });
+                reportSummary.textContent = summaryText;
             }
 
-            pointsResult.textContent = `Total Points: ${totalPoints} ✨`;
-            displayPointsTable(periodPoints, isPerSecond ? "Second" : "Day"); // Pass period type to display function
-        }
-
-        // --- Persistence Functions ---
-        function saveEvents() {
-            localStorage.setItem('activityEvents', JSON.stringify(events));
-        }
-
-        function loadEvents() {
-            const storedEvents = localStorage.getItem('activityEvents');
-            return storedEvents ? JSON.parse(storedEvents) : [];
-        }
-
-        // --- New Clear Log Function ---
-        function clearLog() {
-            const confirmation = confirm("Are you sure you want to clear all logged activities? This action cannot be undone.");
-            if (confirmation) {
-                events = []; // Reset the events array
-                saveEvents(); // Clear local storage
-                updateDisplay(); // Update display to show empty log
-                updateDownloadLink(); // Hide download link
-                pointsResult.textContent = ''; // Clear points result
-                dailyPointsTableContainer.style.display = 'none'; // Hide table
-                alert("Activity log cleared!");
+            function getSegmentTitle(segmentKey) {
+                const titles = {
+                    jus: 'Jus (Er det lovlig?)',
+                    identitet: 'Identitet (Er det i samsvar med verdiene våre?)',
+                    moral: 'Moral (Er det riktig?)',
+                    omdomme: 'Omdømme (Beholder vi vår troverdighet? Tåler det offentlighet?)',
+                    okonomi: 'Økonomi (Lønner det seg?)',
+                    etikk: 'Etikk (Lar det seg begrunne?)'
+                };
+                return titles[segmentKey] || segmentKey;
             }
-        }
-
-        // --- Modified function to display the points table ---
-        function displayPointsTable(pointsData, periodType) {
-            dailyPointsTableBody.innerHTML = '';
-            if (pointsData.length === 0) {
-                dailyPointsTableContainer.style.display = 'none';
-                return;
-            }
-
-            // Update table header based on periodType
-            document.querySelector('#dailyPointsTable thead tr th:first-child').textContent = `${periodType} Time Period`;
-
-            pointsData.forEach(item => {
-                const row = dailyPointsTableBody.insertRow();
-                const periodCell = row.insertCell();
-                const pointsCell = row.insertCell();
-                periodCell.textContent = item.period;
-                pointsCell.textContent = item.points;
-            });
-
-            dailyPointsTableContainer.style.display = 'block';
-        }
+        });
     </script>
-
 </body>
 </html>
