@@ -1,387 +1,172 @@
 <!DOCTYPE html>
-<html lang="no">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Etikkhjulet for beslutninger</title>
+    <title>Kristians Kule Hjemmeside!</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #e0f2f7; /* Lys blå bakgrunn */
-            color: #333;
-            line-height: 1.6;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            min-height: 100vh;
+            background-color: #C0C0C0; /* Klassisk systemgrå */
+            font-family: "Times New Roman", Times, serif;
+            color: #000000;
         }
 
-        .container {
-            max-width: 900px; /* Litt bredere for hjulet */
-            width: 100%;
-            margin: 20px auto;
-            padding: 30px;
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        table {
+            border-collapse: collapse;
         }
 
+        /* Denne lager 3D-bokseffekten */
+        .boks {
+            border: 2px outset #FFFFFF;
+            background-color: #C0C0C0;
+            padding: 15px;
+        }
+        
+        /* 3D-effekt for overskrifter */
         h1, h2 {
-            text-align: center;
-            color: #2c3e50; /* Mørkere blå tittel */
-            margin-bottom: 25px;
-            font-weight: 600;
+            color: #00008B; /* Mørk blå */
+            text-shadow: 2px 2px #808080;
         }
 
-        .form-group {
-            margin-bottom: 25px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 10px;
+        /* Klassiske hyperlenkefarger */
+        a:link {
+            color: #0000FF; /* Knallblå */
             font-weight: bold;
-            color: #34495e;
-            font-size: 1.1em;
         }
-
-        textarea {
-            width: calc(100% - 22px); /* Trekker fra padding og border */
-            padding: 12px;
-            border: 1px solid #cce7ed; /* Lysere kant */
-            border-radius: 6px;
-            box-sizing: border-box;
-            font-size: 1em;
-            transition: border-color 0.3s ease;
-        }
-
-        textarea:focus {
-            outline: none;
-            border-color: #007bff; /* Blå kant ved fokus */
-        }
-
-        /* Styling for det visuelle etikkhjulet */
-        .ethics-wheel-display {
-            position: relative;
-            width: 300px;
-            height: 300px;
-            border-radius: 50%;
-            margin: 40px auto;
-            background: linear-gradient(to right, #ff7e5f, #feb47b); /* Bakgrunn for midten om ønskelig */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            box-shadow: 0 0 0 5px #f0f0f0, inset 0 0 0 10px #f0f0f0; /* Ytre og indre ring */
-        }
-
-        .wheel-center-text {
-            position: absolute;
+        a:visited {
+            color: #800080; /* Lilla */
             font-weight: bold;
-            font-size: 1.8em;
-            color: #2c3e50;
-            text-align: center;
-            line-height: 1.2;
-            z-index: 10;
         }
 
-        .wheel-segment-display {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            clip-path: polygon(50% 50%, 85% 0, 100% 50%, 85% 100%, 50% 100%, 15% 100%, 0 50%, 15% 0); /* Hexagon-form */
-            transform-origin: 50% 50%;
-            opacity: 0.8;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+        /* CSS-animasjon for å erstatte den utgåtte <blink>-taggen */
+        @keyframes blink-effekt {
+            50% { opacity: 0; }
+        }
+        .blink {
+            animation: blink-effekt 1s linear infinite;
+            color: #FF0000; /* Rød! */
             font-weight: bold;
-            color: white; /* Tekstfarge inne i segmentene */
-            font-size: 0.8em;
-            text-align: center;
-            padding: 10px;
-            box-sizing: border-box;
-        }
-
-        /* Farger og rotasjon for hvert segment */
-        .segment-display-1 { background-color: #ff6f61; transform: rotate(0deg); } /* Jus */
-        .segment-display-2 { background-color: #88d8b0; transform: rotate(60deg); } /* Identitet */
-        .segment-display-3 { background-color: #ffcc5c; transform: rotate(120deg); } /* Moral */
-        .segment-display-4 { background-color: #96ceb4; transform: rotate(180deg); } /* Omdømme */
-        .segment-display-5 { background-color: #ffeead; transform: rotate(240deg); } /* Økonomi */
-        .segment-display-6 { background-color: #ff8c94; transform: rotate(300deg); } /* Etikk */
-        
-        /* Mer realistisk gjengivelse av etikkhjulet fra bildet */
-        /* Dette er en mer kompleks layout med overlapping og spesifikke farger/graderinger */
-        .ethics-wheel-figure {
-            position: relative;
-            width: 350px; /* Større figur */
-            height: 350px;
-            border-radius: 50%;
-            margin: 40px auto;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden; /* Sørger for at segmentene ikke stikker ut */
-        }
-
-        .ethics-wheel-figure::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 100px; /* Indre sirkel */
-            height: 100px;
-            background-color: white;
-            border-radius: 50%;
-            z-index: 2;
-            box-shadow: 0 0 0 5px rgba(0,0,0,0.05);
-        }
-        
-        .ethics-wheel-figure::after {
-            content: 'HVA GJØR DU?';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-weight: bold;
-            font-size: 1.5em;
-            color: #333;
-            text-align: center;
-            line-height: 1.2;
-            z-index: 3;
-            white-space: pre-line; /* For linjeskift i teksten */
-            font-family: 'Arial Black', sans-serif;
-            letter-spacing: 0.5px;
-        }
-
-        .wheel-segment-bg {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            clip-path: polygon(50% 50%, 85% 0, 100% 50%, 85% 100%, 50% 100%, 15% 100%, 0 50%, 15% 0);
-            transform-origin: 50% 50%;
-            opacity: 0.8;
-        }
-
-        /* Fargene tilpasset bildet (omtrentlige) */
-        .segment-bg-1 { background: linear-gradient(to bottom right, #e83e8c, #fd7e14); transform: rotate(-30deg); } /* Rosa/oransje (Jus) */
-        .segment-bg-2 { background: linear-gradient(to bottom right, #6f42c1, #20c997); transform: rotate(30deg); } /* Lilla/grønn (Identitet) */
-        .segment-bg-3 { background: linear-gradient(to bottom right, #20c997, #17a2b8); transform: rotate(90deg); } /* Grønn/blå (Moral) */
-        .segment-bg-4 { background: linear-gradient(to bottom right, #17a2b8, #007bff); transform: rotate(150deg); } /* Blå (Omdømme) */
-        .segment-bg-5 { background: linear-gradient(to bottom right, #007bff, #6610f2); transform: rotate(210deg); } /* Mørk Blå/lilla (Økonomi) */
-        .segment-bg-6 { background: linear-gradient(to bottom right, #6610f2, #e83e8c); transform: rotate(270deg); } /* Lilla/rosa (Etikk) */
-
-        .wheel-input-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr; /* To kolonner */
-            gap: 25px;
-            margin-top: 40px;
-        }
-
-        .wheel-segment-input {
-            border: 1px solid #cce7ed;
-            padding: 18px;
-            border-radius: 10px;
-            background-color: #f8fcfd; /* Lys bakgrunn */
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .wheel-segment-input:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-
-        .wheel-segment-input h3 {
-            margin-top: 0;
-            color: #34495e;
             font-size: 1.2em;
-            margin-bottom: 10px;
         }
-
-        button {
-            display: block;
-            width: 100%;
-            padding: 18px;
-            margin-top: 30px;
-            background: linear-gradient(to right, #007bff, #0056b3); /* Fading blå knapp */
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 1.1em;
+        
+        /* Styling for "knapper" og "tekstfelt" */
+        input[type=button] {
+            border: 2px outset #FFFFFF;
+            background-color: #C0C0C0;
             font-weight: bold;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
         }
-
-        button:hover {
-            background: linear-gradient(to right, #0056b3, #003a7a);
-            box-shadow: 0 6px 15px rgba(0, 123, 255, 0.4);
-            transform: translateY(-2px);
+        input[type=button]:active {
+            border-style: inset;
         }
-
-        #report-output {
-            margin-top: 40px;
-            border-top: 2px solid #a7d9e4; /* Mykere skillelinje */
-            padding-top: 25px;
-            background-color: #fdfdfd;
-            border-radius: 10px;
-            padding: 25px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-        }
-
-        #report-output.hidden {
-            display: none;
-        }
-
-        #report-output p strong {
-            color: #2c3e50;
-        }
-
-        .report-segment-item {
-            margin-bottom: 12px;
-            padding: 8px 0;
-            border-bottom: 1px dashed #eee;
-        }
-        .report-segment-item:last-child {
-            border-bottom: none;
-        }
-
-        #report-summary {
-            white-space: pre-line; /* Beholder linjeskift i oppsummeringen */
-            background-color: #f0f8ff;
-            border-left: 5px solid #007bff;
-            padding: 15px;
-            border-radius: 5px;
-            margin-top: 20px;
+        input[type=text] {
+            border: 2px inset #777777;
+            background-color: #FFFFFF;
         }
         
+        hr {
+            border: 1px inset #777777;
+        }
+
     </style>
 </head>
-<body>
-    <div class="container">
-        <h1>Hva gjør du?</h1>
-        <form id="decision-form">
-            <div class="form-group">
-                <label for="problem">Skriv inn din problemstilling:</label>
-                <textarea id="problem" rows="4" placeholder="F.eks. Skal vi investere i en ny teknologi som kan redusere kostnader, men også føre til permitteringer?" required></textarea>
-            </div>
 
-            <div class="ethics-wheel-figure">
-                <div class="wheel-segment-bg segment-bg-1"></div>
-                <div class="wheel-segment-bg segment-bg-2"></div>
-                <div class="wheel-segment-bg segment-bg-3"></div>
-                <div class="wheel-segment-bg segment-bg-4"></div>
-                <div class="wheel-segment-bg segment-bg-5"></div>
-                <div class="wheel-segment-bg segment-bg-6"></div>
-                </div>
+<body onload="velkommenMelding()">
 
-            <div class="wheel-input-grid">
-                <div class="wheel-segment-input">
-                    <h3>Jus (Er det lovlig?)</h3>
-                    <textarea class="segment-input" data-segment="jus" rows="3" placeholder="Beskriv juridiske hensyn..."></textarea>
+    <table width="80%" border="1" align="center" cellpadding="10" cellspacing="5">
+        
+        <tr class="boks">
+            <td colspan="2" align="center">
+                <h1>
+                    <marquee behavior="scroll" direction="left" scrollamount="5">
+                        *** VELKOMMEN TIL MIN FØRSTE HJEMMESIDE!!! ***
+                    </marquee>
+                </h1>
+            </td>
+        </tr>
+        
+        <tr>
+            <td width="25%" valign="top" class="boks">
+                <h3>Navigasjon</h3>
+                <ul>
+                    <li><a href="#">Hjem</a></li>
+                    <li><a href="#">Om Meg</a></li>
+                    <li><a href="#">Gjestebok</a></li>
+                    <li><a href="#">Mine Kule Linker</a></li>
+                    <li><a href="#">Bilder</a></li>
+                </ul>
+                <hr>
+                <img src="https://web.archive.org/web/20091027082348/http://geocities.com/NapaValley/4661/netscape.gif" alt="Netscape Now!">
+            </td>
+            
+            <td width="75%" valign="top" class="boks">
+                <h2>Hei, og velkommen!</h2>
+                
+                <p>Hei! Dette er min kule side på det som kalles "World Wide Web". Her kommer jeg til å legge ut ting om meg selv, mine hobbyer (data, musikk og venner) og kanskje noen bilder av katten min, "Pus".</p>
+                
+                <p>Jeg lærer meg HTML, og det er kjempegøy! Snart skal jeg legge inn en kul bakgrunn (kanskje flammer?) og en MIDI-fil som spiller automatisk.</p>
+                
+                <div style="background-color: #FFFF00; border: 3px dashed red; padding: 10px; text-align: center; margin-top: 20px; margin-bottom: 20px;">
+                    <span class="blink">🚧 SIDEN ER UNDER KONSTRUKSJON! 🚧</span>
+                    <br>
+                    <img src="https://web.archive.org/web/20091027173121/http://geocities.com/Athens/Acropolis/9669/construc.gif" alt="Under Construction">
+                    <p>Kom snart tilbake for flere oppdateringer!</p>
                 </div>
-                <div class="wheel-segment-input">
-                    <h3>Identitet (Er det i samsvar med verdiene våre?)</h3>
-                    <textarea class="segment-input" data-segment="identitet" rows="3" placeholder="Beskriv hvordan dette passer med våre verdier og formål..."></textarea>
-                </div>
-                <div class="wheel-segment-input">
-                    <h3>Moral (Er det riktig?)</h3>
-                    <textarea class="segment-input" data-segment="moral" rows="3" placeholder="Hva føles riktig? Hvilke etiske prinsipper gjelder?"></textarea>
-                </div>
-                <div class="wheel-segment-input">
-                    <h3>Omdømme (Beholder vi vår troverdighet? Tåler det offentlighet?)</h3>
-                    <textarea class="segment-input" data-segment="omdomme" rows="3" placeholder="Hvordan vil dette påvirke vårt rykte? Kan vi stå inne for det?"></textarea>
-                </div>
-                <div class="wheel-segment-input">
-                    <h3>Økonomi (Lønner det seg?)</h3>
-                    <textarea class="segment-input" data-segment="okonomi" rows="3" placeholder="Hva er de økonomiske konsekvensene, både kortsiktig og langsiktig?"></textarea>
-                </div>
-                <div class="wheel-segment-input">
-                    <h3>Etikk (Lar det seg begrunne?)</h3>
-                    <textarea class="segment-input" data-segment="etikk" rows="3" placeholder="Hvilke argumenter kan underbygge eller svekke valget?"></textarea>
-                </div>
-            </div>
-            <button type="submit">Generer beslutningsrapport</button>
-        </form>
+                
+                <h3>Skriv i min Gjestebok!</h3>
+                <p>Legg igjen en hilsen (dette er bare en demo):</p>
+                Navn: <input type="text" id="gjestebokNavn" size="20">
+                <input type="button" value="Signer!" onclick="signerGjestebok()">
+            </td>
+        </tr>
+        
+        <tr class="boks">
+            <td colspan="2" align="center">
+                <hr>
+                <p>Du er besøkende nummer:</p>
+                <img src="https://web.archive.org/web/20091027134015/http://geocities.com/Area51/Lair/1260/counter.gif" alt="Besøksteller">
+                <span id="visitorCount" style="font-size: 1.5em; font-weight: bold; color: #0000FF;"></span>
+                <p>
+                    <small>Sist oppdatert: 14. oktober 1999</small><br>
+                    <img src="https://web.archive.org/web/20091027104714/http://geocities.com/RainForest/2916/mademail.gif" alt="Made with Notepad">
+                </p>
+            </td>
+        </tr>
 
-        <div id="report-output" class="hidden">
-            <h2>Din beslutningsrapport</h2>
-            <p><strong>Problemstilling:</strong> <span id="report-problem"></span></p>
-            <div id="report-segments"></div>
-            <h3>Oppsummering</h3>
-            <p id="report-summary"></p>
-        </div>
-    </div>
+    </table>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const form = document.getElementById('decision-form');
-            const reportOutput = document.getElementById('report-output');
-            const reportProblem = document.getElementById('report-problem');
-            const reportSegments = document.getElementById('report-segments');
-            const reportSummary = document.getElementById('report-summary');
+        // Funksjon som kjører når siden lastes (se <body>-taggen)
+        function velkommenMelding() {
+            // Det klassiske "velkommen"-varselet
+            alert("VELKOMMEN TIL MIN KULE HJEMMESIDE!!!!\n\nTrykk OK for å fortsette.");
+            
+            // Kall funksjonen som setter den falske besøkstelleren
+            settBesokende();
+        }
 
-            form.addEventListener('submit', (event) => {
-                event.preventDefault();
+        // Funksjon for den falske besøkstelleren
+        function settBesokende() {
+            // Generer et tilfeldig "høyt" tall for å se populær ut
+            var randomCount = Math.floor(Math.random() * 20000) + 70000;
+            
+            // Formater tallet med "mellomrom" (veldig 90-talls)
+            var countString = randomCount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+            
+            document.getElementById('visitorCount').innerText = countString;
+        }
 
-                const problemStatement = document.getElementById('problem').value.trim();
-                if (!problemStatement) {
-                    alert('Vennligst skriv inn en problemstilling.');
-                    return;
-                }
-
-                const segments = document.querySelectorAll('.segment-input');
-                const results = {};
-                
-                segments.forEach(segment => {
-                    const segmentName = segment.getAttribute('data-segment');
-                    results[segmentName] = segment.value.trim();
-                });
-
-                generateReport(problemStatement, results);
-
-                reportOutput.classList.remove('hidden');
-                reportOutput.scrollIntoView({ behavior: 'smooth', block: 'start' }); // Skroller til rapporten
-            });
-
-            function generateReport(problem, results) {
-                reportProblem.textContent = problem;
-                reportSegments.innerHTML = '';
-                
-                let summaryText = 'Dette er en oppsummering av dine vurderinger basert på etikkhjulet: \n\n'; // Mer luft
-
-                for (const segment in results) {
-                    const segmentTitle = getSegmentTitle(segment);
-                    const segmentAnswer = results[segment] || 'Ingen kommentar';
-
-                    const segmentItem = document.createElement('div');
-                    segmentItem.classList.add('report-segment-item');
-                    segmentItem.innerHTML = `<strong>${segmentTitle.split('(')[0].trim()}:</strong> ${segmentAnswer}`; // Fjerner spørsmålsdelen i rapporten
-                    reportSegments.appendChild(segmentItem);
-
-                    summaryText += `- ${segmentTitle.split('(')[0].trim()}: ${segmentAnswer}\n`;
-                }
-
-                reportSummary.textContent = summaryText;
+        // Funksjon for den falske gjesteboken
+        function signerGjestebok() {
+            var navn = document.getElementById('gjestebokNavn').value;
+            if (navn) {
+                alert("Takk for at du signerte, " + navn + "!\n\n(Dette er bare en demo, hilsenen din er ikke lagret. Men takk likevel!)");
+                document.getElementById('gjestebokNavn').value = ''; // Tøm feltet
+            } else {
+                alert("Du må skrive inn navnet ditt i boksen først!");
             }
-
-            function getSegmentTitle(segmentKey) {
-                const titles = {
-                    jus: 'Jus (Er det lovlig?)',
-                    identitet: 'Identitet (Er det i samsvar med verdiene våre?)',
-                    moral: 'Moral (Er det riktig?)',
-                    omdomme: 'Omdømme (Beholder vi vår troverdighet? Tåler det offentlighet?)',
-                    okonomi: 'Økonomi (Lønner det seg?)',
-                    etikk: 'Etikk (Lar det seg begrunne?)'
-                };
-                return titles[segmentKey] || segmentKey;
-            }
-        });
+        }
     </script>
+
 </body>
 </html>
