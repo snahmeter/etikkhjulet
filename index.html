@@ -1,172 +1,206 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Kristians Kule Hjemmeside!</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flying Mathilda</title>
+    <link href="https://fonts.googleapis.com/css2?family=Monoton&display=swap" rel="stylesheet">
     <style>
+        /* Apply basic reset and ensure the body fills the viewport */
         body {
-            background-color: #C0C0C0; /* Klassisk systemgrå */
-            font-family: "Times New Roman", Times, serif;
-            color: #000000;
+            margin: 0;
+            padding: 0;
+            background-color: #1a1a2e; /* Deep purple background */
+            overflow: hidden; /* Hide scrollbars */
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Monoton', cursive; /* A wild, fun font */
         }
 
-        table {
-            border-collapse: collapse;
-        }
-
-        /* Denne lager 3D-bokseffekten */
-        .boks {
-            border: 2px outset #FFFFFF;
-            background-color: #C0C0C0;
-            padding: 15px;
-        }
-        
-        /* 3D-effekt for overskrifter */
-        h1, h2 {
-            color: #00008B; /* Mørk blå */
-            text-shadow: 2px 2px #808080;
-        }
-
-        /* Klassiske hyperlenkefarger */
-        a:link {
-            color: #0000FF; /* Knallblå */
-            font-weight: bold;
-        }
-        a:visited {
-            color: #800080; /* Lilla */
-            font-weight: bold;
-        }
-
-        /* CSS-animasjon for å erstatte den utgåtte <blink>-taggen */
-        @keyframes blink-effekt {
-            50% { opacity: 0; }
-        }
-        .blink {
-            animation: blink-effekt 1s linear infinite;
-            color: #FF0000; /* Rød! */
-            font-weight: bold;
-            font-size: 1.2em;
-        }
-        
-        /* Styling for "knapper" og "tekstfelt" */
-        input[type=button] {
-            border: 2px outset #FFFFFF;
-            background-color: #C0C0C0;
-            font-weight: bold;
+        /* Styling for the flying text element */
+        #mathilda-text {
+            position: absolute; /* Essential for independent movement */
+            color: #00bcd4; /* Bright cyan color */
+            font-size: clamp(3rem, 10vw, 8rem); /* Responsive font size */
+            text-shadow: 0 0 10px #00bcd4, 0 0 20px #00bcd4, 0 0 30px #ff3b3f; /* Neon glow effect */
+            transition: transform 0.05s linear; /* Slight smoothing on movement */
             cursor: pointer;
         }
-        input[type=button]:active {
-            border-style: inset;
-        }
-        input[type=text] {
-            border: 2px inset #777777;
-            background-color: #FFFFFF;
-        }
-        
-        hr {
-            border: 1px inset #777777;
+
+        /* Keyframes for a pulsating border to look more 'alive' */
+        @keyframes pulse-border {
+            0% { border-color: #ff3b3f; }
+            50% { border-color: #00bcd4; }
+            100% { border-color: #ff3b3f; }
         }
 
+        /* Message box styling */
+        .message-box {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(255, 255, 255, 0.95);
+            color: #1a1a2e;
+            padding: 10px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            font-family: sans-serif;
+            font-size: 14px;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        .message-box.visible {
+            opacity: 1;
+        }
     </style>
 </head>
+<body>
 
-<body onload="velkommenMelding()">
+    <div id="mathilda-text">Mathilda</div>
 
-    <table width="80%" border="1" align="center" cellpadding="10" cellspacing="5">
-        
-        <tr class="boks">
-            <td colspan="2" align="center">
-                <h1>
-                    <marquee behavior="scroll" direction="left" scrollamount="5">
-                        *** VELKOMMEN TIL MIN FØRSTE HJEMMESIDE!!! ***
-                    </marquee>
-                </h1>
-            </td>
-        </tr>
-        
-        <tr>
-            <td width="25%" valign="top" class="boks">
-                <h3>Navigasjon</h3>
-                <ul>
-                    <li><a href="#">Hjem</a></li>
-                    <li><a href="#">Om Meg</a></li>
-                    <li><a href="#">Gjestebok</a></li>
-                    <li><a href="#">Mine Kule Linker</a></li>
-                    <li><a href="#">Bilder</a></li>
-                </ul>
-                <hr>
-                <img src="https://web.archive.org/web/20091027082348/http://geocities.com/NapaValley/4661/netscape.gif" alt="Netscape Now!">
-            </td>
-            
-            <td width="75%" valign="top" class="boks">
-                <h2>Hei, og velkommen!</h2>
-                
-                <p>Hei! Dette er min kule side på det som kalles "World Wide Web". Her kommer jeg til å legge ut ting om meg selv, mine hobbyer (data, musikk og venner) og kanskje noen bilder av katten min, "Pus".</p>
-                
-                <p>Jeg lærer meg HTML, og det er kjempegøy! Snart skal jeg legge inn en kul bakgrunn (kanskje flammer?) og en MIDI-fil som spiller automatisk.</p>
-                
-                <div style="background-color: #FFFF00; border: 3px dashed red; padding: 10px; text-align: center; margin-top: 20px; margin-bottom: 20px;">
-                    <span class="blink">🚧 SIDEN ER UNDER KONSTRUKSJON! 🚧</span>
-                    <br>
-                    <img src="https://web.archive.org/web/20091027173121/http://geocities.com/Athens/Acropolis/9669/construc.gif" alt="Under Construction">
-                    <p>Kom snart tilbake for flere oppdateringer!</p>
-                </div>
-                
-                <h3>Skriv i min Gjestebok!</h3>
-                <p>Legg igjen en hilsen (dette er bare en demo):</p>
-                Navn: <input type="text" id="gjestebokNavn" size="20">
-                <input type="button" value="Signer!" onclick="signerGjestebok()">
-            </td>
-        </tr>
-        
-        <tr class="boks">
-            <td colspan="2" align="center">
-                <hr>
-                <p>Du er besøkende nummer:</p>
-                <img src="https://web.archive.org/web/20091027134015/http://geocities.com/Area51/Lair/1260/counter.gif" alt="Besøksteller">
-                <span id="visitorCount" style="font-size: 1.5em; font-weight: bold; color: #0000FF;"></span>
-                <p>
-                    <small>Sist oppdatert: 14. oktober 1999</small><br>
-                    <img src="https://web.archive.org/web/20091027104714/http://geocities.com/RainForest/2916/mademail.gif" alt="Made with Notepad">
-                </p>
-            </td>
-        </tr>
-
-    </table>
+    <div id="message-box" class="message-box" role="alert"></div>
 
     <script>
-        // Funksjon som kjører når siden lastes (se <body>-taggen)
-        function velkommenMelding() {
-            // Det klassiske "velkommen"-varselet
-            alert("VELKOMMEN TIL MIN KULE HJEMMESIDE!!!!\n\nTrykk OK for å fortsette.");
-            
-            // Kall funksjonen som setter den falske besøkstelleren
-            settBesokende();
+        // --- Configuration ---
+        const SPEED_MIN = 3.5; // Minimum base speed (pixels per frame)
+        const SPEED_MAX = 5.5; // Maximum base speed (pixels per frame)
+        const DAMPING = 0.98;  // Factor to slightly slow down the chaos over time (optional)
+        const CHAOS_FACTOR = 0.05; // Amount of random variation applied each frame
+
+        // --- DOM Elements ---
+        const textElement = document.getElementById('mathilda-text');
+        const messageBox = document.getElementById('message-box');
+
+        // --- State Variables ---
+        let posX = 0;
+        let posY = 0;
+        let dx = 0; // Velocity in X direction
+        let dy = 0; // Velocity in Y direction
+        let textRect;
+
+        // Utility function for showing temporary messages
+        function showMessage(message, duration = 3000) {
+            messageBox.textContent = message;
+            messageBox.classList.add('visible');
+            setTimeout(() => {
+                messageBox.classList.remove('visible');
+            }, duration);
         }
 
-        // Funksjon for den falske besøkstelleren
-        function settBesokende() {
-            // Generer et tilfeldig "høyt" tall for å se populær ut
-            var randomCount = Math.floor(Math.random() * 20000) + 70000;
-            
-            // Formater tallet med "mellomrom" (veldig 90-talls)
-            var countString = randomCount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-            
-            document.getElementById('visitorCount').innerText = countString;
+        // --- Initialization ---
+        function initialize() {
+            // Get the text element's size after the DOM is loaded
+            textRect = textElement.getBoundingClientRect();
+
+            // Set initial position to center of screen
+            posX = (window.innerWidth / 2) - (textRect.width / 2);
+            posY = (window.innerHeight / 2) - (textRect.height / 2);
+
+            // Generate "wild" random starting velocities
+            const initialSpeed = Math.random() * (SPEED_MAX - SPEED_MIN) + SPEED_MIN;
+            const angle = Math.random() * 2 * Math.PI; // Random angle
+            dx = initialSpeed * Math.cos(angle);
+            dy = initialSpeed * Math.sin(angle);
+
+            // Apply initial position
+            textElement.style.left = `${posX}px`;
+            textElement.style.top = `${posY}px`;
+
+            // Start the loop
+            requestAnimationFrame(animate);
+            showMessage("Mathilda is flying wildly!", 4000);
         }
 
-        // Funksjon for den falske gjesteboken
-        function signerGjestebok() {
-            var navn = document.getElementById('gjestebokNavn').value;
-            if (navn) {
-                alert("Takk for at du signerte, " + navn + "!\n\n(Dette er bare en demo, hilsenen din er ikke lagret. Men takk likevel!)");
-                document.getElementById('gjestebokNavn').value = ''; // Tøm feltet
-            } else {
-                alert("Du må skrive inn navnet ditt i boksen først!");
+        // --- Animation Loop ---
+        function animate() {
+            // Recalculate dimensions on every frame (cheap operation) to handle resizing
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+            const textW = textElement.offsetWidth;
+            const textH = textElement.offsetHeight;
+
+            // 1. Apply Chaos (introduce small random changes to velocity)
+            dx += (Math.random() - 0.5) * CHAOS_FACTOR;
+            dy += (Math.random() - 0.5) * CHAOS_FACTOR;
+
+            // 2. Apply Damping (optional: slows movement slightly over time)
+            dx *= DAMPING;
+            dy *= DAMPING;
+
+            // 3. Update Position
+            posX += dx;
+            posY += dy;
+
+            // 4. Boundary Checks (Bouncing)
+            let bounce = false;
+
+            // Right boundary
+            if (posX + textW > vw) {
+                posX = vw - textW; // Stick it to the edge
+                dx *= -1;          // Reverse direction
+                bounce = true;
             }
-        }
-    </script>
+            // Left boundary
+            else if (posX < 0) {
+                posX = 0;
+                dx *= -1;
+                bounce = true;
+            }
 
+            // Bottom boundary
+            if (posY + textH > vh) {
+                posY = vh - textH;
+                dy *= -1;
+                bounce = true;
+            }
+            // Top boundary
+            else if (posY < 0) {
+                posY = 0;
+                dy *= -1;
+                bounce = true;
+            }
+
+            // If a bounce occurred, ensure speed is maintained above the minimum
+            if (bounce) {
+                const currentSpeed = Math.sqrt(dx * dx + dy * dy);
+                if (currentSpeed < SPEED_MIN) {
+                    const scaleFactor = SPEED_MIN / currentSpeed;
+                    dx *= scaleFactor;
+                    dy *= scaleFactor;
+                }
+            }
+
+            // 5. Apply new position to the DOM
+            textElement.style.transform = `translate(${posX}px, ${posY}px)`;
+
+            // Loop
+            requestAnimationFrame(animate);
+        }
+
+        // --- Event Listeners ---
+
+        // Re-initialize dimensions on window resize to ensure accurate bounds
+        window.addEventListener('resize', () => {
+             // Reset textRect dimensions and position, but keep velocity
+             textRect = textElement.getBoundingClientRect();
+        });
+
+        // Add a fun interaction on click
+        textElement.addEventListener('click', () => {
+            // Increase chaos drastically for a moment
+            dx *= 1.5;
+            dy *= 1.5;
+            showMessage("WHOA! I'm dizzy!", 2000);
+        });
+
+        // Start the application once the window is fully loaded
+        window.onload = initialize;
+    </script>
 </body>
 </html>
