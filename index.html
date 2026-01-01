@@ -3,25 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FPL Live Points Checker</title>
+    <title>FPL Points Checker V2</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f4f8; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
         .card { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 320px; text-align: center; }
-        h2 { color: #37003c; margin-top: 0; } /* FPL Purple */
+        h2 { color: #37003c; margin-top: 0; }
         input { padding: 10px; width: 70%; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 10px; font-size: 16px; }
-        button { background-color: #00ff87; /* FPL Green */ color: #37003c; border: none; padding: 10px 20px; font-weight: bold; border-radius: 4px; cursor: pointer; width: 100%; font-size: 16px; }
+        button { background-color: #00ff87; color: #37003c; border: none; padding: 10px 20px; font-weight: bold; border-radius: 4px; cursor: pointer; width: 100%; font-size: 16px; transition: 0.2s; }
         button:hover { background-color: #00e676; }
         .result { margin-top: 20px; text-align: left; display: none; }
         .stat-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
         .stat-val { font-weight: bold; }
-        .error { color: red; font-size: 14px; margin-top: 10px; display: none; }
+        .error { color: #d00; font-size: 14px; margin-top: 15px; padding: 10px; background: #ffe6e6; border-radius: 4px; display: none; text-align: left; }
         .loader { display: none; margin-top: 15px; color: #666; font-size: 14px; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>FPL Points Checker</h2>
+    <h2>FPL Points V2</h2>
     <p style="font-size: 0.9rem; color: #666;">Enter Team ID:</p>
     <input type="number" id="teamIdInput" placeholder="e.g. 123456">
     <button onclick="getPoints()">Check Points</button>
@@ -31,35 +31,41 @@
 
     <div id="result" class="result">
         <div class="stat-row">
-            <span>Current Gameweek:</span>
+            <span>Gameweek:</span>
             <span id="gw-display" class="stat-val">-</span>
         </div>
         <div class="stat-row">
-            <span>GW Points (Live):</span>
+            <span>GW Points:</span>
             <span id="gw-points" class="stat-val" style="color: #37003c; font-size: 1.2em;">-</span>
         </div>
         <div class="stat-row">
-            <span>Total Season Points:</span>
+            <span>Total Points:</span>
             <span id="total-points" class="stat-val">-</span>
         </div>
         <div class="stat-row">
-            <span>Active Chip:</span>
-            <span id="active-chip" class="stat-val">None</span>
+            <span>Rank:</span>
+            <span id="overall-rank" class="stat-val">-</span>
         </div>
     </div>
 </div>
 
 <script>
-    // We use a CORS proxy to bypass browser restrictions
-    // In a real production app, you would build your own backend instead.
-    const PROXY_URL = "https://api.allorigins.win/get?url=";
+    // V2: Using corsproxy.io (usually faster/more reliable for JSON)
+    const PROXY_URL = "https://corsproxy.io/?url=";
     const BASE_URL = "https://fantasy.premierleague.com/api";
 
     async function fetchViaProxy(targetUrl) {
-        const response = await fetch(PROXY_URL + encodeURIComponent(targetUrl));
-        const data = await response.json();
-        if (!response.ok) throw new Error('Proxy error');
-        return JSON.parse(data.contents);
+        try {
+            const response = await fetch(PROXY_URL + encodeURIComponent(targetUrl));
+            if (!response.ok) {
+                // If FPL returns 404, it means the ID is wrong
+                if(response.status === 404) throw new Error("Team ID not found.");
+                throw new Error(`API Error (${response.status})`);
+            }
+            return await response.json();
+        } catch (e) {
+            throw e; // Pass error up
+        }
     }
 
     async function getPoints() {
@@ -69,7 +75,7 @@
         const loader = document.getElementById('loader');
 
         if (!teamId) {
-            alert("Please enter a Team ID");
+            showError("Please enter a Team ID.");
             return;
         }
 
@@ -80,37 +86,4 @@
 
         try {
             // STEP 1: Get General Data to find the current Gameweek
-            const bootstrapData = await fetchViaProxy(`${BASE_URL}/bootstrap-static/`);
-            
-            // Find the current gameweek object
-            const currentEvent = bootstrapData.events.find(event => event.is_current);
-            
-            if (!currentEvent) {
-                throw new Error("No active gameweek found (Is the season over?)");
-            }
-            
-            const currentGW = currentEvent.id;
-
-            // STEP 2: Get the Team's specific data for this Gameweek
-            const teamData = await fetchViaProxy(`${BASE_URL}/entry/${teamId}/event/${currentGW}/picks/`);
-
-            // STEP 3: Display Data
-            document.getElementById('gw-display').innerText = currentGW;
-            document.getElementById('gw-points').innerText = teamData.entry_history.points;
-            document.getElementById('total-points').innerText = teamData.entry_history.total_points;
-            document.getElementById('active-chip').innerText = teamData.active_chip ? teamData.active_chip : "None";
-
-            resultDiv.style.display = 'block';
-
-        } catch (err) {
-            console.error(err);
-            errorDiv.innerText = "Error: Could not find team or API is down.";
-            errorDiv.style.display = 'block';
-        } finally {
-            loader.style.display = 'none';
-        }
-    }
-</script>
-
-</body>
-</html>
+            const bootstrap
