@@ -3,204 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flying Mathilda</title>
-    <link href="https://fonts.googleapis.com/css2?family=Monoton&display=swap" rel="stylesheet">
+    <title>FPL Live Points Checker</title>
     <style>
-        /* Apply basic reset and ensure the body fills the viewport */
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #1a1a2e; /* Deep purple background */
-            overflow: hidden; /* Hide scrollbars */
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-family: 'Monoton', cursive; /* A wild, fun font */
-        }
-
-        /* Styling for the flying text element */
-        #mathilda-text {
-            position: absolute; /* Essential for independent movement */
-            color: #00bcd4; /* Bright cyan color */
-            font-size: clamp(3rem, 10vw, 8rem); /* Responsive font size */
-            text-shadow: 0 0 10px #00bcd4, 0 0 20px #00bcd4, 0 0 30px #ff3b3f; /* Neon glow effect */
-            transition: transform 0.05s linear; /* Slight smoothing on movement */
-            cursor: pointer;
-        }
-
-        /* Keyframes for a pulsating border to look more 'alive' */
-        @keyframes pulse-border {
-            0% { border-color: #ff3b3f; }
-            50% { border-color: #00bcd4; }
-            100% { border-color: #ff3b3f; }
-        }
-
-        /* Message box styling */
-        .message-box {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: rgba(255, 255, 255, 0.95);
-            color: #1a1a2e;
-            padding: 10px 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-            font-family: sans-serif;
-            font-size: 14px;
-            z-index: 1000;
-            opacity: 0;
-            transition: opacity 0.5s ease-in-out;
-        }
-
-        .message-box.visible {
-            opacity: 1;
-        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f4f8; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 320px; text-align: center; }
+        h2 { color: #37003c; margin-top: 0; } /* FPL Purple */
+        input { padding: 10px; width: 70%; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 10px; font-size: 16px; }
+        button { background-color: #00ff87; /* FPL Green */ color: #37003c; border: none; padding: 10px 20px; font-weight: bold; border-radius: 4px; cursor: pointer; width: 100%; font-size: 16px; }
+        button:hover { background-color: #00e676; }
+        .result { margin-top: 20px; text-align: left; display: none; }
+        .stat-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+        .stat-val { font-weight: bold; }
+        .error { color: red; font-size: 14px; margin-top: 10px; display: none; }
+        .loader { display: none; margin-top: 15px; color: #666; font-size: 14px; }
     </style>
 </head>
 <body>
 
-    <div id="mathilda-text">Mathilda</div>
+<div class="card">
+    <h2>FPL Points Checker</h2>
+    <p style="font-size: 0.9rem; color: #666;">Enter Team ID:</p>
+    <input type="number" id="teamIdInput" placeholder="e.g. 123456">
+    <button onclick="getPoints()">Check Points</button>
+    
+    <div id="loader" class="loader">Fetching data...</div>
+    <div id="error" class="error"></div>
 
-    <div id="message-box" class="message-box" role="alert"></div>
+    <div id="result" class="result">
+        <div class="stat-row">
+            <span>Current Gameweek:</span>
+            <span id="gw-display" class="stat-val">-</span>
+        </div>
+        <div class="stat-row">
+            <span>GW Points (Live):</span>
+            <span id="gw-points" class="stat-val" style="color: #37003c; font-size: 1.2em;">-</span>
+        </div>
+        <div class="stat-row">
+            <span>Total Season Points:</span>
+            <span id="total-points" class="stat-val">-</span>
+        </div>
+        <div class="stat-row">
+            <span>Active Chip:</span>
+            <span id="active-chip" class="stat-val">None</span>
+        </div>
+    </div>
+</div>
 
-    <script>
-        // --- Configuration ---
-        const SPEED_MIN = 3.5; // Minimum base speed (pixels per frame)
-        const SPEED_MAX = 5.5; // Maximum base speed (pixels per frame)
-        const DAMPING = 0.98;  // Factor to slightly slow down the chaos over time (optional)
-        const CHAOS_FACTOR = 0.05; // Amount of random variation applied each frame
+<script>
+    // We use a CORS proxy to bypass browser restrictions
+    // In a real production app, you would build your own backend instead.
+    const PROXY_URL = "https://api.allorigins.win/get?url=";
+    const BASE_URL = "https://fantasy.premierleague.com/api";
 
-        // --- DOM Elements ---
-        const textElement = document.getElementById('mathilda-text');
-        const messageBox = document.getElementById('message-box');
+    async function fetchViaProxy(targetUrl) {
+        const response = await fetch(PROXY_URL + encodeURIComponent(targetUrl));
+        const data = await response.json();
+        if (!response.ok) throw new Error('Proxy error');
+        return JSON.parse(data.contents);
+    }
 
-        // --- State Variables ---
-        let posX = 0;
-        let posY = 0;
-        let dx = 0; // Velocity in X direction
-        let dy = 0; // Velocity in Y direction
-        let textRect;
+    async function getPoints() {
+        const teamId = document.getElementById('teamIdInput').value;
+        const resultDiv = document.getElementById('result');
+        const errorDiv = document.getElementById('error');
+        const loader = document.getElementById('loader');
 
-        // Utility function for showing temporary messages
-        function showMessage(message, duration = 3000) {
-            messageBox.textContent = message;
-            messageBox.classList.add('visible');
-            setTimeout(() => {
-                messageBox.classList.remove('visible');
-            }, duration);
+        if (!teamId) {
+            alert("Please enter a Team ID");
+            return;
         }
 
-        // --- Initialization ---
-        function initialize() {
-            // Get the text element's size after the DOM is loaded
-            textRect = textElement.getBoundingClientRect();
+        // Reset UI
+        resultDiv.style.display = 'none';
+        errorDiv.style.display = 'none';
+        loader.style.display = 'block';
 
-            // Set initial position to center of screen
-            posX = (window.innerWidth / 2) - (textRect.width / 2);
-            posY = (window.innerHeight / 2) - (textRect.height / 2);
+        try {
+            // STEP 1: Get General Data to find the current Gameweek
+            const bootstrapData = await fetchViaProxy(`${BASE_URL}/bootstrap-static/`);
+            
+            // Find the current gameweek object
+            const currentEvent = bootstrapData.events.find(event => event.is_current);
+            
+            if (!currentEvent) {
+                throw new Error("No active gameweek found (Is the season over?)");
+            }
+            
+            const currentGW = currentEvent.id;
 
-            // Generate "wild" random starting velocities
-            const initialSpeed = Math.random() * (SPEED_MAX - SPEED_MIN) + SPEED_MIN;
-            const angle = Math.random() * 2 * Math.PI; // Random angle
-            dx = initialSpeed * Math.cos(angle);
-            dy = initialSpeed * Math.sin(angle);
+            // STEP 2: Get the Team's specific data for this Gameweek
+            const teamData = await fetchViaProxy(`${BASE_URL}/entry/${teamId}/event/${currentGW}/picks/`);
 
-            // Apply initial position
-            textElement.style.left = `${posX}px`;
-            textElement.style.top = `${posY}px`;
+            // STEP 3: Display Data
+            document.getElementById('gw-display').innerText = currentGW;
+            document.getElementById('gw-points').innerText = teamData.entry_history.points;
+            document.getElementById('total-points').innerText = teamData.entry_history.total_points;
+            document.getElementById('active-chip').innerText = teamData.active_chip ? teamData.active_chip : "None";
 
-            // Start the loop
-            requestAnimationFrame(animate);
-            showMessage("Mathilda is flying wildly!", 4000);
+            resultDiv.style.display = 'block';
+
+        } catch (err) {
+            console.error(err);
+            errorDiv.innerText = "Error: Could not find team or API is down.";
+            errorDiv.style.display = 'block';
+        } finally {
+            loader.style.display = 'none';
         }
+    }
+</script>
 
-        // --- Animation Loop ---
-        function animate() {
-            // Recalculate dimensions on every frame (cheap operation) to handle resizing
-            const vw = window.innerWidth;
-            const vh = window.innerHeight;
-            const textW = textElement.offsetWidth;
-            const textH = textElement.offsetHeight;
-
-            // 1. Apply Chaos (introduce small random changes to velocity)
-            dx += (Math.random() - 0.5) * CHAOS_FACTOR;
-            dy += (Math.random() - 0.5) * CHAOS_FACTOR;
-
-            // 2. Apply Damping (optional: slows movement slightly over time)
-            dx *= DAMPING;
-            dy *= DAMPING;
-
-            // 3. Update Position
-            posX += dx;
-            posY += dy;
-
-            // 4. Boundary Checks (Bouncing)
-            let bounce = false;
-
-            // Right boundary
-            if (posX + textW > vw) {
-                posX = vw - textW; // Stick it to the edge
-                dx *= -1;          // Reverse direction
-                bounce = true;
-            }
-            // Left boundary
-            else if (posX < 0) {
-                posX = 0;
-                dx *= -1;
-                bounce = true;
-            }
-
-            // Bottom boundary
-            if (posY + textH > vh) {
-                posY = vh - textH;
-                dy *= -1;
-                bounce = true;
-            }
-            // Top boundary
-            else if (posY < 0) {
-                posY = 0;
-                dy *= -1;
-                bounce = true;
-            }
-
-            // If a bounce occurred, ensure speed is maintained above the minimum
-            if (bounce) {
-                const currentSpeed = Math.sqrt(dx * dx + dy * dy);
-                if (currentSpeed < SPEED_MIN) {
-                    const scaleFactor = SPEED_MIN / currentSpeed;
-                    dx *= scaleFactor;
-                    dy *= scaleFactor;
-                }
-            }
-
-            // 5. Apply new position to the DOM
-            textElement.style.transform = `translate(${posX}px, ${posY}px)`;
-
-            // Loop
-            requestAnimationFrame(animate);
-        }
-
-        // --- Event Listeners ---
-
-        // Re-initialize dimensions on window resize to ensure accurate bounds
-        window.addEventListener('resize', () => {
-             // Reset textRect dimensions and position, but keep velocity
-             textRect = textElement.getBoundingClientRect();
-        });
-
-        // Add a fun interaction on click
-        textElement.addEventListener('click', () => {
-            // Increase chaos drastically for a moment
-            dx *= 1.5;
-            dy *= 1.5;
-            showMessage("WHOA! I'm dizzy!", 2000);
-        });
-
-        // Start the application once the window is fully loaded
-        window.onload = initialize;
-    </script>
 </body>
 </html>
