@@ -3,95 +3,155 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FPL Debugger</title>
+    <title>FPL Points Checker V4</title>
     <style>
-        body { font-family: monospace; background: #f0f4f8; padding: 20px; }
-        .card { background: white; padding: 20px; border-radius: 8px; max-width: 500px; margin: 0 auto; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        input { padding: 10px; width: 60%; }
-        button { padding: 10px 20px; background: #00ff87; border: none; font-weight: bold; cursor: pointer; }
-        #debug-log { background: #333; color: #0f0; padding: 15px; margin-top: 20px; border-radius: 5px; white-space: pre-wrap; font-size: 12px; min-height: 100px; }
-        .error { color: #ff4444; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f4f8; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .card { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 320px; text-align: center; }
+        h2 { color: #37003c; margin-top: 0; }
+        input { padding: 12px; width: 70%; border: 1px solid #ccc; border-radius: 6px; margin-bottom: 12px; font-size: 16px; outline: none; }
+        input:focus { border-color: #00ff87; }
+        button { background-color: #00ff87; color: #37003c; border: none; padding: 12px 20px; font-weight: bold; border-radius: 6px; cursor: pointer; width: 100%; font-size: 16px; transition: 0.2s; }
+        button:hover { background-color: #00e676; transform: translateY(-1px); }
+        .result { margin-top: 25px; text-align: left; display: none; animation: fadeIn 0.3s ease-in; }
+        .stat-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .stat-val { font-weight: bold; color: #333; }
+        .highlight { color: #37003c; font-size: 1.3em; }
+        .error { color: #d00; font-size: 13px; margin-top: 15px; padding: 10px; background: #ffe6e6; border-radius: 4px; display: none; text-align: left; line-height: 1.4; }
+        .loader { display: none; margin-top: 15px; font-size: 14px; color: #666; }
+        .status-log { font-size: 11px; color: #999; margin-top: 10px; text-align: left; display: none; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>FPL Connection Debugger</h2>
-    <input type="number" id="teamIdInput" value="12713236">
-    <button onclick="runDebug()">Check Points</button>
+    <h2>FPL Live Points</h2>
+    <input type="number" id="teamIdInput" placeholder="Team ID" value="12713236">
+    <button onclick="getPoints()">Check Points</button>
     
-    <div id="result" style="margin-top: 20px; font-size: 1.2em; font-weight: bold;"></div>
+    <div id="loader" class="loader">
+        <div id="loader-msg">Connecting...</div>
+        <div id="status-log" class="status-log"></div>
+    </div>
+    
+    <div id="error" class="error"></div>
+
+    <div id="result" class="result">
+        <div class="stat-row">
+            <span>Gameweek</span>
+            <span id="gw-display" class="stat-val">-</span>
+        </div>
+        <div class="stat-row">
+            <span>GW Points</span>
+            <span id="gw-points" class="stat-val highlight">-</span>
+        </div>
+        <div class="stat-row">
+            <span>Total Points</span>
+            <span id="total-points" class="stat-val">-</span>
+        </div>
+        <div class="stat-row">
+            <span>Overall Rank</span>
+            <span id="overall-rank" class="stat-val">-</span>
+        </div>
+    </div>
 </div>
 
-<div id="debug-log">Waiting for input...</div>
-
 <script>
-    // Trying a different proxy (AllOrigins) to see if it helps
-    const PROXY_URL = "https://api.allorigins.win/raw?url=";
+    // List of proxies to try in order. If one fails, we try the next.
+    const PROXY_LIST = [
+        // Proxy 1: CodeTabs (Often very reliable)
+        url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+        // Proxy 2: CorsProxy.io
+        url => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
+        // Proxy 3: AllOrigins (Fallback)
+        url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
+    ];
+
     const BASE_URL = "https://fantasy.premierleague.com/api";
 
-    function log(msg, isError = false) {
-        const logDiv = document.getElementById('debug-log');
-        const timestamp = new Date().toLocaleTimeString();
-        const color = isError ? '#ff6b6b' : '#00ff87';
-        logDiv.innerHTML += `<div style="color:${color}">[${timestamp}] ${msg}</div>`;
-        console.log(`[${timestamp}] ${msg}`);
+    // Helper: Tries to fetch a URL using our list of proxies
+    async function robustFetch(targetUrl) {
+        const logDiv = document.getElementById('status-log');
+        
+        for (let i = 0; i < PROXY_LIST.length; i++) {
+            const proxyUrl = PROXY_LIST[i](targetUrl);
+            try {
+                logDiv.innerHTML += `Attempting Proxy ${i + 1}...<br>`;
+                const response = await fetch(proxyUrl);
+                
+                if (response.status === 404) throw new Error("404: Not Found");
+                if (!response.ok) throw new Error(`Status ${response.status}`);
+                
+                return await response.json(); // Success!
+            } catch (err) {
+                console.warn(`Proxy ${i + 1} failed:`, err);
+                // Continue to next proxy loop
+            }
+        }
+        throw new Error("All proxies blocked. Please disable AdBlock/Privacy extensions for this page.");
     }
 
-    async function runDebug() {
+    async function getPoints() {
         const teamId = document.getElementById('teamIdInput').value;
-        document.getElementById('debug-log').innerHTML = "Starting process...<br>";
-        
+        const resultDiv = document.getElementById('result');
+        const errorDiv = document.getElementById('error');
+        const loader = document.getElementById('loader');
+        const logDiv = document.getElementById('status-log');
+
+        if (!teamId) {
+            alert("Please enter a Team ID");
+            return;
+        }
+
+        // Reset UI
+        resultDiv.style.display = 'none';
+        errorDiv.style.display = 'none';
+        loader.style.display = 'block';
+        logDiv.style.display = 'block';
+        logDiv.innerHTML = "";
+
         try {
-            // TEST 1: Bootstrap Static
-            log(`Step 1: Fetching Bootstrap data...`);
-            log(`URL: ${PROXY_URL}${encodeURIComponent(BASE_URL + '/bootstrap-static/')}`);
+            // STEP 1: Get Bootstrap Data
+            document.getElementById('loader-msg').innerText = "Finding current Gameweek...";
+            const bootstrapData = await robustFetch(`${BASE_URL}/bootstrap-static/`);
             
-            const bootstrapRes = await fetch(PROXY_URL + encodeURIComponent(BASE_URL + '/bootstrap-static/'));
-            log(`Bootstrap Status: ${bootstrapRes.status} ${bootstrapRes.statusText}`);
-            
-            if (!bootstrapRes.ok) throw new Error(`Bootstrap failed: ${bootstrapRes.status}`);
-            
-            const bootstrapData = await bootstrapRes.json();
-            log(`Bootstrap Data received. Found ${bootstrapData.events.length} events.`);
-
             // Find current GW
-            let currentEvent = bootstrapData.events.find(e => e.is_current);
+            let currentEvent = bootstrapData.events.find(event => event.is_current);
             if (!currentEvent) {
-                 log("No 'is_current' event found. Looking for last finished event...");
-                 const finished = bootstrapData.events.filter(e => e.finished);
-                 currentEvent = finished[finished.length - 1];
+                // Fallback if season finished
+                const finishedEvents = bootstrapData.events.filter(event => event.finished);
+                currentEvent = finishedEvents[finishedEvents.length - 1];
             }
-
+            
             if (!currentEvent) throw new Error("Could not determine Gameweek.");
-            const gw = currentEvent.id;
-            log(`Current Gameweek determined: ${gw}`);
+            const currentGW = currentEvent.id;
 
-            // TEST 2: Team Details
-            log(`Step 2: Fetching Team ${teamId} for GW ${gw}...`);
-            const picksUrl = `${BASE_URL}/entry/${teamId}/event/${gw}/picks/`;
-            const picksRes = await fetch(PROXY_URL + encodeURIComponent(picksUrl));
+            // STEP 2: Get Team Data
+            document.getElementById('loader-msg').innerText = `Fetching Team ${teamId} data...`;
+            const teamData = await robustFetch(`${BASE_URL}/entry/${teamId}/event/${currentGW}/picks/`);
             
-            log(`Team API Status: ${picksRes.status}`);
-            
-            if (picksRes.status === 404) {
-                throw new Error("API returned 404 (Team ID likely doesn't exist or no history for this GW)");
-            }
-            
-            if (!picksRes.ok) {
-                 const text = await picksRes.text();
-                 throw new Error(`API Error: ${text.substring(0, 100)}`);
-            }
+            // STEP 3: Get Rank Data
+            const teamInfo = await robustFetch(`${BASE_URL}/entry/${teamId}/`);
 
-            const teamData = await picksRes.json();
-            log(`SUCCESS! Points found: ${teamData.entry_history.points}`);
+            // STEP 4: Render
+            document.getElementById('gw-display').innerText = `GW ${currentGW}`;
+            document.getElementById('gw-points').innerText = teamData.entry_history.points;
+            document.getElementById('total-points').innerText = teamData.entry_history.total_points;
             
-            document.getElementById('result').innerText = `Points: ${teamData.entry_history.points}`;
+            const rank = teamInfo.summary_overall_rank 
+                         ? teamInfo.summary_overall_rank.toLocaleString() 
+                         : "-";
+            document.getElementById('overall-rank').innerText = rank;
+
+            loader.style.display = 'none';
+            resultDiv.style.display = 'block';
 
         } catch (err) {
-            log(`CRITICAL ERROR: ${err.message}`, true);
-            log(`Stack: ${err.stack}`, true);
-            alert("Check the black box below for the error details.");
+            console.error(err);
+            loader.style.display = 'none';
+            errorDiv.style.display = 'block';
+            errorDiv.innerHTML = `<strong>Error:</strong> ${err.message}<br><br>
+            <em>Tip: If using Brave Browser, turn off "Shields". If using Chrome/Firefox, disable AdBlock for this tab.</em>`;
         }
     }
 </script>
