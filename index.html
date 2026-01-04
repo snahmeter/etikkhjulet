@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FPL Gameweek MVP Table</title>
+    <title>FPL League Race (Relative)</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f4f8; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
         .card { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 95%; max-width: 1000px; text-align: center; }
-        h2 { color: #37003c; margin-top: 0; margin-bottom: 5px; }
-        p.subtitle { color: #666; font-size: 0.9em; margin-bottom: 20px; }
+        h2 { color: #37003c; margin-top: 0; }
         
         .controls { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
         input { padding: 12px; width: 150px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; outline: none; }
@@ -16,60 +16,48 @@
         button:hover { background-color: #00e676; transform: translateY(-1px); }
         button:disabled { background-color: #ccc; cursor: not-allowed; }
 
-        .progress-container { width: 100%; background-color: #eee; border-radius: 4px; height: 10px; margin: 15px 0; display: none; overflow: hidden; }
-        .progress-fill { height: 100%; background-color: #37003c; width: 0%; transition: width 0.2s; }
-        .status-text { font-size: 13px; color: #666; min-height: 20px; margin-bottom: 10px; }
-
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; display: none; }
-        th { background-color: #37003c; color: white; padding: 12px; text-align: left; position: sticky; top: 0; }
-        td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; }
-        tr:nth-child(even) { background-color: #f9f9f9; }
-        tr:hover { background-color: #f1f1f1; }
+        .chart-container { position: relative; height: 70vh; width: 100%; display: none; margin-top: 20px; }
         
-        .mvp-cell { font-weight: bold; color: #37003c; }
-        .points-badge { background: #00ff87; color: #37003c; padding: 3px 8px; border-radius: 10px; font-weight: bold; font-size: 0.85em; margin-left: 5px; }
-        .captain-badge { background: #000; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; margin-left: 5px; text-transform: uppercase; }
-
+        .status-box { margin-top: 20px; font-size: 14px; color: #666; min-height: 20px; }
+        .progress-bar { width: 100%; background-color: #eee; border-radius: 4px; height: 10px; margin-top: 10px; display: none; overflow: hidden; }
+        .progress-fill { height: 100%; background-color: #37003c; width: 0%; transition: width 0.2s; }
+        
         .error { color: #d00; font-size: 14px; margin-top: 15px; padding: 10px; background: #ffe6e6; border-radius: 4px; display: none; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>FPL League: The Difference Makers</h2>
-    <p class="subtitle">Analyzes the current Gameweek to find each manager's best performing player.</p>
+    <h2>FPL League: Versus Average</h2>
+    <p style="font-size: 0.9em; color: #666; margin-bottom: 20px;">
+        Shows how far ahead/behind the league average each team is.
+    </p>
     
     <div class="controls">
         <input type="number" id="leagueIdInput" placeholder="League ID" value="84072">
-        <button id="loadBtn" onclick="runAnalysis()">Analyze League</button>
+        <button id="loadBtn" onclick="loadLeague()">Load & Compare</button>
     </div>
 
-    <div class="status-text" id="status-text">Ready to analyze.</div>
-    <div class="progress-container" id="progress-bar">
-        <div class="progress-fill" id="progress-fill"></div>
+    <div id="status-box" class="status-box">Ready.</div>
+    
+    <div id="progress-bar" class="progress-bar">
+        <div id="progress-fill" class="progress-fill"></div>
     </div>
     
     <div id="error" class="error"></div>
 
-    <table id="mvpTable">
-        <thead>
-            <tr>
-                <th width="50">Rank</th>
-                <th>Manager</th>
-                <th width="80">GW Pts</th>
-                <th>Their MVP (Highest Scorer)</th>
-            </tr>
-        </thead>
-        <tbody id="tableBody"></tbody>
-    </table>
+    <div class="chart-container" id="chart-container">
+        <canvas id="myChart"></canvas>
+    </div>
 </div>
 
 <script>
     // --- CONFIG ---
     const BASE_URL = "https://fantasy.premierleague.com/api";
     const MAX_TEAMS = 50; 
-    const DELAY_MS = 200; // Polite throttle
+    const DELAY_MS = 200; // Throttle requests
 
+    // --- PROXY LIST ---
     const PROXY_LIST = [
         url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
         url => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
@@ -90,119 +78,114 @@
     }
 
     // --- MAIN LOGIC ---
-    async function runAnalysis() {
+    let myChart = null;
+
+    async function loadLeague() {
         const leagueId = document.getElementById('leagueIdInput').value;
         const btn = document.getElementById('loadBtn');
-        const status = document.getElementById('status-text');
+        const status = document.getElementById('status-box');
         const errorDiv = document.getElementById('error');
         const progressContainer = document.getElementById('progress-bar');
         const progressFill = document.getElementById('progress-fill');
-        const table = document.getElementById('mvpTable');
-        const tbody = document.getElementById('tableBody');
+        const chartContainer = document.getElementById('chart-container');
 
         if (!leagueId) return alert("Enter a League ID");
 
-        // RESET UI
+        // UI Reset
         btn.disabled = true;
         errorDiv.style.display = 'none';
-        table.style.display = 'none';
-        tbody.innerHTML = '';
+        chartContainer.style.display = 'none';
         progressContainer.style.display = 'block';
         progressFill.style.width = '0%';
-        status.innerText = "Initializing...";
+        status.innerText = "Fetching League Standings...";
 
         try {
-            // STEP 1: Get Global Data (Player Names & IDs)
-            status.innerText = "Fetching Player Database...";
-            const bootstrap = await robustFetch(`${BASE_URL}/bootstrap-static/`);
-            
-            // Map: Player ID -> Web Name (e.g. 1 -> "Saka")
-            const playerNames = {};
-            bootstrap.elements.forEach(p => playerNames[p.id] = p.web_name);
-
-            // Determine Current Gameweek
-            let currentEvent = bootstrap.events.find(e => e.is_current);
-            if (!currentEvent) {
-                 const finishedEvents = bootstrap.events.filter(e => e.finished);
-                 currentEvent = finishedEvents[finishedEvents.length - 1];
-            }
-            if (!currentEvent) throw new Error("Could not find active Gameweek.");
-            const currentGW = currentEvent.id;
-
-            // STEP 2: Get Live Points for this Gameweek
-            status.innerText = `Fetching Live Scores for GW ${currentGW}...`;
-            const liveData = await robustFetch(`${BASE_URL}/event/${currentGW}/live/`);
-            
-            // Map: Player ID -> Live Points (Stats)
-            const playerStats = {};
-            liveData.elements.forEach(el => playerStats[el.id] = el.stats.total_points);
-
-            // STEP 3: Get League Standings
-            status.innerText = "Fetching League Standings...";
+            // 1. Get League Standings
             const leagueData = await robustFetch(`${BASE_URL}/leagues-classic/${leagueId}/standings/`);
             const teams = leagueData.standings.results.slice(0, MAX_TEAMS);
-            
-            // STEP 4: Analyze Each Team
-            for (let i = 0; i < teams.length; i++) {
+            const teamCount = teams.length;
+
+            if (teamCount === 0) throw new Error("No teams found.");
+
+            // 2. Fetch History for ALL teams
+            const allTeamHistories = [];
+            let maxGw = 0;
+
+            for (let i = 0; i < teamCount; i++) {
                 const team = teams[i];
-                const pct = Math.round(((i + 1) / teams.length) * 100);
+                const pct = Math.round(((i + 1) / teamCount) * 100);
                 progressFill.style.width = `${pct}%`;
-                status.innerText = `Analyzing ${team.entry_name} (${i+1}/${teams.length})...`;
+                status.innerText = `Fetching ${team.entry_name} (${i+1}/${teamCount})...`;
 
                 try {
-                    // Fetch this manager's picks for current GW
-                    const picksData = await robustFetch(`${BASE_URL}/entry/${team.entry}/event/${currentGW}/picks/`);
-                    const picks = picksData.picks;
-
-                    // Find the MVP in their team
-                    let bestPlayerName = "-";
-                    let bestPlayerPoints = -1;
-                    let isCaptain = false;
-
-                    picks.forEach(pick => {
-                        const rawPoints = playerStats[pick.element] || 0;
-                        const multiplier = pick.multiplier; // 1=Normal, 2=Captain, 3=Triple Cap
-                        const totalPoints = rawPoints * multiplier;
-
-                        if (totalPoints > bestPlayerPoints) {
-                            bestPlayerPoints = totalPoints;
-                            bestPlayerName = playerNames[pick.element];
-                            isCaptain = (multiplier >= 2);
-                        }
+                    const historyData = await robustFetch(`${BASE_URL}/entry/${team.entry}/history/`);
+                    const history = historyData.current;
+                    
+                    if (history.length > maxGw) maxGw = history.length;
+                    
+                    allTeamHistories.push({
+                        name: team.player_name + " (" + team.entry_name + ")",
+                        history: history
                     });
-
-                    // Add Row to Table
-                    const row = tbody.insertRow();
-                    
-                    // Rank
-                    row.insertCell(0).innerText = team.rank;
-                    
-                    // Manager Name
-                    const nameCell = row.insertCell(1);
-                    nameCell.innerHTML = `<strong>${team.entry_name}</strong><br><span style="color:#777; font-size:0.9em">${team.player_name}</span>`;
-
-                    // GW Points
-                    row.insertCell(2).innerText = picksData.entry_history.points;
-
-                    // MVP Cell
-                    const mvpCell = row.insertCell(3);
-                    let mvpHtml = `<span class="mvp-cell">${bestPlayerName}</span> <span class="points-badge">${bestPlayerPoints} pts</span>`;
-                    
-                    if (isCaptain) {
-                        mvpHtml += ` <span class="captain-badge">C</span>`;
-                    }
-                    mvpCell.innerHTML = mvpHtml;
-
                 } catch (e) {
-                    console.warn(`Skipped team ${team.entry}`, e);
+                    console.warn(`Failed to fetch team ${team.entry}`);
                 }
-
-                // Throttle
                 await new Promise(r => setTimeout(r, DELAY_MS));
             }
 
-            status.innerText = `Analysis Complete for GW ${currentGW}.`;
-            table.style.display = 'table';
+            // 3. Calculate Average per Gameweek
+            status.innerText = "Calculating Averages...";
+            const gwAverages = []; // Index 0 = GW1, Index 1 = GW2...
+
+            for (let gwIdx = 0; gwIdx < maxGw; gwIdx++) {
+                let sum = 0;
+                let count = 0;
+                
+                allTeamHistories.forEach(team => {
+                    // Check if team has played this gameweek
+                    if (team.history[gwIdx]) {
+                        sum += team.history[gwIdx].total_points;
+                        count++;
+                    }
+                });
+                
+                gwAverages[gwIdx] = count > 0 ? (sum / count) : 0;
+            }
+
+            // 4. Build Datasets (Score - Average)
+            const datasets = allTeamHistories.map((team, index) => {
+                const relativePoints = [];
+                
+                for(let gwIdx = 0; gwIdx < maxGw; gwIdx++) {
+                     if (team.history[gwIdx]) {
+                         // The Magic Math: Team Score - Average Score
+                         const diff = team.history[gwIdx].total_points - gwAverages[gwIdx];
+                         relativePoints.push(diff);
+                     } else {
+                         relativePoints.push(null);
+                     }
+                }
+
+                const color = `hsl(${ (index / teamCount) * 360 }, 70%, 50%)`;
+                
+                return {
+                    label: team.name,
+                    data: relativePoints,
+                    borderColor: color,
+                    backgroundColor: color,
+                    borderWidth: 2,
+                    pointRadius: 0, // Hides dots for cleaner look
+                    pointHoverRadius: 6,
+                    tension: 0.4,
+                    fill: false
+                };
+            });
+
+            // 5. Render
+            renderChart(datasets, maxGw);
+
+            status.innerText = "Done! 0 line = League Average.";
+            chartContainer.style.display = 'block';
             progressContainer.style.display = 'none';
 
         } catch (err) {
@@ -212,6 +195,45 @@
         } finally {
             btn.disabled = false;
         }
+    }
+
+    function renderChart(datasets, maxGw) {
+        const ctx = document.getElementById('myChart').getContext('2d');
+        if (myChart) myChart.destroy();
+
+        const labels = Array.from({length: maxGw}, (_, i) => `GW${i+1}`);
+
+        myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    title: { display: true, text: 'Points +/- League Average' },
+                    legend: { display: false } // Hide legend as it gets too crowded with 50 teams
+                },
+                scales: {
+                    x: {
+                        grid: { display: false }
+                    },
+                    y: {
+                        title: { display: true, text: 'Points Difference from Average' },
+                        grid: {
+                            color: (context) => context.tick.value === 0 ? '#ff0000' : '#e5e5e5',
+                            lineWidth: (context) => context.tick.value === 0 ? 2 : 1,
+                        }
+                    }
+                }
+            }
+        });
     }
 </script>
 
