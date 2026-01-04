@@ -2,62 +2,120 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FPL League Race (Relative)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FPL Race: Mobile Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f4f8; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        .card { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 95%; max-width: 1000px; text-align: center; }
-        h2 { color: #37003c; margin-top: 0; }
+        /* Mobile-First Reset */
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f4f8; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
         
-        .controls { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
-        input { padding: 12px; width: 150px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; outline: none; }
-        button { background-color: #00ff87; color: #37003c; border: none; padding: 12px 20px; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 16px; transition: 0.2s; }
-        button:hover { background-color: #00e676; transform: translateY(-1px); }
-        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        .card { 
+            background: white; 
+            padding: 1rem; 
+            border-radius: 12px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08); 
+            width: 100%; 
+            max-width: 800px; 
+            box-sizing: border-box; 
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+        }
 
-        .chart-container { position: relative; height: 70vh; width: 100%; display: none; margin-top: 20px; }
+        h2 { color: #37003c; margin: 0 0 10px 0; font-size: 1.4rem; }
+        p { color: #666; font-size: 0.9rem; margin-bottom: 15px; margin-top: 0; }
         
-        .status-box { margin-top: 20px; font-size: 14px; color: #666; min-height: 20px; }
-        .progress-bar { width: 100%; background-color: #eee; border-radius: 4px; height: 10px; margin-top: 10px; display: none; overflow: hidden; }
+        /* Mobile Input Stacking */
+        .controls { display: flex; gap: 8px; justify-content: center; margin-bottom: 15px; flex-wrap: wrap; }
+        input { padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; width: 100%; max-width: 120px; text-align: center; }
+        button { background-color: #00ff87; color: #37003c; border: none; padding: 10px 20px; font-weight: bold; border-radius: 8px; cursor: pointer; font-size: 16px; flex-grow: 1; max-width: 200px; }
+        button:disabled { background-color: #ddd; color: #999; }
+
+        /* Chart Area */
+        .chart-wrapper { 
+            position: relative; 
+            height: 50vh; /* Default height */
+            width: 100%; 
+            display: none; 
+            margin-bottom: 10px;
+        }
+
+        /* Custom Scrollable Legend */
+        .legend-box {
+            display: none;
+            max-height: 150px; /* Limits height so it doesn't take over screen */
+            overflow-y: auto;  /* Allows scrolling */
+            text-align: left;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+            font-size: 12px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); /* Responsive Grid */
+            gap: 5px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            user-select: none;
+        }
+        .legend-item:hover { background-color: #f5f5f5; }
+        .legend-item.hidden { opacity: 0.4; text-decoration: line-through; }
+        
+        .color-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+            flex-shrink: 0;
+        }
+
+        /* Progress Bar */
+        .progress-bar { width: 100%; background-color: #eee; border-radius: 4px; height: 8px; margin: 10px 0; display: none; overflow: hidden; }
         .progress-fill { height: 100%; background-color: #37003c; width: 0%; transition: width 0.2s; }
-        
-        .error { color: #d00; font-size: 14px; margin-top: 15px; padding: 10px; background: #ffe6e6; border-radius: 4px; display: none; }
+        .status-box { font-size: 12px; color: #777; min-height: 18px; }
+        .error { color: #d00; font-size: 13px; background: #ffe6e6; padding: 10px; border-radius: 6px; display: none; margin-top: 10px; }
+
+        /* Media Query for larger screens */
+        @media (min-width: 600px) {
+            .card { padding: 2rem; }
+            .chart-wrapper { height: 65vh; }
+            .legend-box { max-height: 200px; }
+            input { width: auto; }
+            button { flex-grow: 0; }
+        }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>FPL League: Versus Average</h2>
-    <p style="font-size: 0.9em; color: #666; margin-bottom: 20px;">
-        Shows how far ahead/behind the league average each team is.
-    </p>
+    <h2>FPL Race</h2>
+    <p>Points +/- League Average</p>
     
     <div class="controls">
-        <input type="number" id="leagueIdInput" placeholder="League ID" value="84072">
-        <button id="loadBtn" onclick="loadLeague()">Load & Compare</button>
+        <input type="number" id="leagueIdInput" placeholder="League ID" value="1080388">
+        <button id="loadBtn" onclick="loadLeague()">Load League</button>
     </div>
 
     <div id="status-box" class="status-box">Ready.</div>
-    
-    <div id="progress-bar" class="progress-bar">
-        <div id="progress-fill" class="progress-fill"></div>
-    </div>
-    
+    <div id="progress-bar" class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
     <div id="error" class="error"></div>
 
-    <div class="chart-container" id="chart-container">
+    <div class="chart-wrapper" id="chart-wrapper">
         <canvas id="myChart"></canvas>
     </div>
+
+    <div id="custom-legend" class="legend-box" style="display:none;"></div>
 </div>
 
 <script>
-    // --- CONFIG ---
     const BASE_URL = "https://fantasy.premierleague.com/api";
     const MAX_TEAMS = 50; 
-    const DELAY_MS = 200; // Throttle requests
+    const DELAY_MS = 200; 
 
-    // --- PROXY LIST ---
+    // Robust Proxy List
     const PROXY_LIST = [
         url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
         url => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
@@ -77,7 +135,6 @@
         }
     }
 
-    // --- MAIN LOGIC ---
     let myChart = null;
 
     async function loadLeague() {
@@ -87,95 +144,81 @@
         const errorDiv = document.getElementById('error');
         const progressContainer = document.getElementById('progress-bar');
         const progressFill = document.getElementById('progress-fill');
-        const chartContainer = document.getElementById('chart-container');
+        const chartWrapper = document.getElementById('chart-wrapper');
+        const legendBox = document.getElementById('custom-legend');
 
         if (!leagueId) return alert("Enter a League ID");
 
-        // UI Reset
+        // RESET UI
         btn.disabled = true;
         errorDiv.style.display = 'none';
-        chartContainer.style.display = 'none';
+        chartWrapper.style.display = 'none';
+        legendBox.style.display = 'none';
+        legendBox.innerHTML = '';
         progressContainer.style.display = 'block';
         progressFill.style.width = '0%';
-        status.innerText = "Fetching League Standings...";
+        status.innerText = "Finding League...";
 
         try {
-            // 1. Get League Standings
+            // 1. Get League
             const leagueData = await robustFetch(`${BASE_URL}/leagues-classic/${leagueId}/standings/`);
             const teams = leagueData.standings.results.slice(0, MAX_TEAMS);
-            const teamCount = teams.length;
+            
+            if (!teams.length) throw new Error("No teams found.");
 
-            if (teamCount === 0) throw new Error("No teams found.");
-
-            // 2. Fetch History for ALL teams
+            // 2. Fetch Histories
             const allTeamHistories = [];
             let maxGw = 0;
 
-            for (let i = 0; i < teamCount; i++) {
+            for (let i = 0; i < teams.length; i++) {
                 const team = teams[i];
-                const pct = Math.round(((i + 1) / teamCount) * 100);
+                const pct = Math.round(((i + 1) / teams.length) * 100);
                 progressFill.style.width = `${pct}%`;
-                status.innerText = `Fetching ${team.entry_name} (${i+1}/${teamCount})...`;
+                status.innerText = `Fetching ${i+1}/${teams.length}: ${team.entry_name}`;
 
                 try {
                     const historyData = await robustFetch(`${BASE_URL}/entry/${team.entry}/history/`);
                     const history = historyData.current;
-                    
                     if (history.length > maxGw) maxGw = history.length;
                     
                     allTeamHistories.push({
                         name: team.player_name + " (" + team.entry_name + ")",
-                        history: history
+                        history: history,
+                        id: team.entry
                     });
-                } catch (e) {
-                    console.warn(`Failed to fetch team ${team.entry}`);
-                }
+                } catch (e) { console.warn(e); }
                 await new Promise(r => setTimeout(r, DELAY_MS));
             }
 
-            // 3. Calculate Average per Gameweek
-            status.innerText = "Calculating Averages...";
-            const gwAverages = []; // Index 0 = GW1, Index 1 = GW2...
-
-            for (let gwIdx = 0; gwIdx < maxGw; gwIdx++) {
-                let sum = 0;
-                let count = 0;
-                
-                allTeamHistories.forEach(team => {
-                    // Check if team has played this gameweek
-                    if (team.history[gwIdx]) {
-                        sum += team.history[gwIdx].total_points;
-                        count++;
-                    }
+            // 3. Calc Averages
+            status.innerText = "Processing Data...";
+            const gwAverages = [];
+            for (let gw = 0; gw < maxGw; gw++) {
+                let sum = 0, count = 0;
+                allTeamHistories.forEach(t => {
+                    if (t.history[gw]) { sum += t.history[gw].total_points; count++; }
                 });
-                
-                gwAverages[gwIdx] = count > 0 ? (sum / count) : 0;
+                gwAverages[gw] = count > 0 ? (sum / count) : 0;
             }
 
-            // 4. Build Datasets (Score - Average)
+            // 4. Build Datasets
             const datasets = allTeamHistories.map((team, index) => {
-                const relativePoints = [];
-                
-                for(let gwIdx = 0; gwIdx < maxGw; gwIdx++) {
-                     if (team.history[gwIdx]) {
-                         // The Magic Math: Team Score - Average Score
-                         const diff = team.history[gwIdx].total_points - gwAverages[gwIdx];
-                         relativePoints.push(diff);
+                const data = [];
+                for(let gw = 0; gw < maxGw; gw++) {
+                     if (team.history[gw]) {
+                         data.push(team.history[gw].total_points - gwAverages[gw]);
                      } else {
-                         relativePoints.push(null);
+                         data.push(null);
                      }
                 }
-
-                const color = `hsl(${ (index / teamCount) * 360 }, 70%, 50%)`;
-                
+                const hue = (index / teams.length) * 360;
                 return {
                     label: team.name,
-                    data: relativePoints,
-                    borderColor: color,
-                    backgroundColor: color,
+                    data: data,
+                    borderColor: `hsl(${hue}, 70%, 50%)`,
+                    backgroundColor: `hsl(${hue}, 70%, 50%)`,
                     borderWidth: 2,
-                    pointRadius: 0, // Hides dots for cleaner look
-                    pointHoverRadius: 6,
+                    pointRadius: 0,
                     tension: 0.4,
                     fill: false
                 };
@@ -183,9 +226,11 @@
 
             // 5. Render
             renderChart(datasets, maxGw);
+            generateCustomLegend(datasets);
 
-            status.innerText = "Done! 0 line = League Average.";
-            chartContainer.style.display = 'block';
+            status.innerText = "Done! (Tap name below to hide/show)";
+            chartWrapper.style.display = 'block';
+            legendBox.style.display = 'grid'; // Enable Grid layout for legend
             progressContainer.style.display = 'none';
 
         } catch (err) {
@@ -205,34 +250,79 @@
 
         myChart = new Chart(ctx, {
             type: 'line',
-            data: {
-                labels: labels,
-                datasets: datasets
-            },
+            data: { labels, datasets },
             options: {
                 responsive: true,
-                maintainAspectRatio: false,
-                interaction: {
-                    mode: 'index',
-                    intersect: false,
-                },
+                maintainAspectRatio: false, // Critical for mobile
+                interaction: { mode: 'index', intersect: false },
                 plugins: {
-                    title: { display: true, text: 'Points +/- League Average' },
-                    legend: { display: false } // Hide legend as it gets too crowded with 50 teams
+                    legend: { display: false }, // Hide default legend
+                    tooltip: {
+                        bodyFont: { size: 11 },
+                        titleFont: { size: 11 },
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) label += ': ';
+                                if (context.parsed.y !== null) {
+                                    const val = context.parsed.y.toFixed(1);
+                                    label += (val > 0 ? '+' : '') + val;
+                                }
+                                return label;
+                            }
+                        }
+                    }
                 },
                 scales: {
-                    x: {
-                        grid: { display: false }
-                    },
+                    x: { grid: { display: false }, ticks: { font: { size: 10 } } },
                     y: {
-                        title: { display: true, text: 'Points Difference from Average' },
                         grid: {
-                            color: (context) => context.tick.value === 0 ? '#ff0000' : '#e5e5e5',
-                            lineWidth: (context) => context.tick.value === 0 ? 2 : 1,
-                        }
+                            color: (ctx) => ctx.tick.value === 0 ? '#ff0000' : '#f0f0f0',
+                            lineWidth: (ctx) => ctx.tick.value === 0 ? 1.5 : 1,
+                        },
+                        ticks: { font: { size: 10 } }
                     }
                 }
             }
+        });
+    }
+
+    function generateCustomLegend(datasets) {
+        const container = document.getElementById('custom-legend');
+        container.innerHTML = '';
+
+        datasets.forEach((ds, index) => {
+            const item = document.createElement('div');
+            item.className = 'legend-item';
+            
+            const dot = document.createElement('div');
+            dot.className = 'color-dot';
+            dot.style.backgroundColor = ds.borderColor;
+
+            const text = document.createElement('span');
+            // Clean name: "Full Name (Team Name)" -> Just "Full Name" to save space on mobile?
+            // Or just keep it as is but truncate via CSS if needed.
+            text.innerText = ds.label.split('(')[0].trim(); 
+            text.style.whiteSpace = 'nowrap';
+            text.style.overflow = 'hidden';
+            text.style.textOverflow = 'ellipsis';
+            text.style.fontSize = '11px';
+
+            item.appendChild(dot);
+            item.appendChild(text);
+
+            item.onclick = () => {
+                // Toggle Chart Vis
+                const isHidden = !myChart.isDatasetVisible(index);
+                myChart.setDatasetVisibility(index, isHidden);
+                myChart.update();
+                
+                // Toggle UI style
+                if (isHidden) item.classList.remove('hidden');
+                else item.classList.add('hidden');
+            };
+
+            container.appendChild(item);
         });
     }
 </script>
