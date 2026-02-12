@@ -2,330 +2,126 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FPL Race: Mobile Edition</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tile Reveal Game</title>
     <style>
-        /* Mobile-First Reset */
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f4f8; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        
-        .card { 
-            background: white; 
-            padding: 1rem; 
-            border-radius: 12px; 
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08); 
-            width: 100%; 
-            max-width: 800px; 
-            box-sizing: border-box; 
-            text-align: center;
+        :root {
+            --bg-color: #0f172a;
+            --card-front: #1e293b;
+            --card-back: #38bdf8;
+            --text-color: #f8fafc;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
             display: flex;
             flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
         }
 
-        h2 { color: #37003c; margin: 0 0 10px 0; font-size: 1.4rem; }
-        p { color: #666; font-size: 0.9rem; margin-bottom: 15px; margin-top: 0; }
-        
-        /* Mobile Input Stacking */
-        .controls { display: flex; gap: 8px; justify-content: center; margin-bottom: 15px; flex-wrap: wrap; }
-        input { padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; width: 100%; max-width: 120px; text-align: center; }
-        button { background-color: #00ff87; color: #37003c; border: none; padding: 10px 20px; font-weight: bold; border-radius: 8px; cursor: pointer; font-size: 16px; flex-grow: 1; max-width: 200px; }
-        button:disabled { background-color: #ddd; color: #999; }
+        h1 { margin-bottom: 2rem; font-weight: 300; letter-spacing: 2px; }
 
-        /* Chart Area */
-        .chart-wrapper { 
-            position: relative; 
-            height: 50vh; /* Default height */
-            width: 100%; 
-            display: none; 
-            margin-bottom: 10px;
-        }
-
-        /* Custom Scrollable Legend */
-        .legend-box {
-            display: none;
-            max-height: 150px; /* Limits height so it doesn't take over screen */
-            overflow-y: auto;  /* Allows scrolling */
-            text-align: left;
-            border-top: 1px solid #eee;
-            padding-top: 10px;
-            font-size: 12px;
+        .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); /* Responsive Grid */
-            gap: 5px;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            perspective: 1000px;
         }
 
-        .legend-item {
+        .tile {
+            width: 100px;
+            height: 100px;
+            cursor: pointer;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .tile.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .tile-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
             display: flex;
             align-items: center;
-            cursor: pointer;
-            padding: 4px;
-            border-radius: 4px;
-            user-select: none;
-        }
-        .legend-item:hover { background-color: #f5f5f5; }
-        .legend-item.hidden { opacity: 0.4; text-decoration: line-through; }
-        
-        .color-dot {
-            width: 10px; height: 10px;
-            border-radius: 50%;
-            margin-right: 8px;
-            flex-shrink: 0;
+            justify-content: center;
+            border-radius: 12px;
+            font-weight: bold;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
-        /* Progress Bar */
-        .progress-bar { width: 100%; background-color: #eee; border-radius: 4px; height: 8px; margin: 10px 0; display: none; overflow: hidden; }
-        .progress-fill { height: 100%; background-color: #37003c; width: 0%; transition: width 0.2s; }
-        .status-box { font-size: 12px; color: #777; min-height: 18px; }
-        .error { color: #d00; font-size: 13px; background: #ffe6e6; padding: 10px; border-radius: 6px; display: none; margin-top: 10px; }
+        .tile-front {
+            background-color: var(--card-front);
+            border: 2px solid #334155;
+        }
 
-        /* Media Query for larger screens */
-        @media (min-width: 600px) {
-            .card { padding: 2rem; }
-            .chart-wrapper { height: 65vh; }
-            .legend-box { max-height: 200px; }
-            input { width: auto; }
-            button { flex-grow: 0; }
+        .tile-front:hover {
+            background-color: #334155;
+        }
+
+        .tile-back {
+            background-color: var(--card-back);
+            color: #0f172a;
+            transform: rotateY(180deg);
+            font-size: 1.1rem;
+        }
+
+        .tile-back.empty {
+            background-color: #475569;
+            color: #94a3b8;
         }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <h2>FPL Race</h2>
-    <p>Points +/- League Average</p>
-    
-    <div class="controls">
-        <input type="number" id="leagueIdInput" placeholder="League ID" value="1080388">
-        <button id="loadBtn" onclick="loadLeague()">Load League</button>
-    </div>
+    <h1>Find the Names</h1>
+    <div class="grid" id="grid"></div>
 
-    <div id="status-box" class="status-box">Ready.</div>
-    <div id="progress-bar" class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
-    <div id="error" class="error"></div>
-
-    <div class="chart-wrapper" id="chart-wrapper">
-        <canvas id="myChart"></canvas>
-    </div>
-
-    <div id="custom-legend" class="legend-box" style="display:none;"></div>
-</div>
-
-<script>
-    const BASE_URL = "https://fantasy.premierleague.com/api";
-    const MAX_TEAMS = 50; 
-    const DELAY_MS = 200; 
-
-    // Robust Proxy List
-    const PROXY_LIST = [
-        url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
-        url => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
-        url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
-    ];
-
-    async function robustFetch(targetUrl) {
-        for (let i = 0; i < PROXY_LIST.length; i++) {
-            try {
-                const response = await fetch(PROXY_LIST[i](targetUrl));
-                if (response.status === 404) throw new Error("404 Not Found");
-                if (!response.ok) throw new Error(`Status ${response.status}`);
-                return await response.json();
-            } catch (err) {
-                if (i === PROXY_LIST.length - 1) throw err;
-            }
+    <script>
+        const names = ['Erik', 'Stella', 'Marta'];
+        const totalTiles = 16; // 4x4 grid
+        
+        // Create an array with names and empty strings
+        let tileContent = [...names];
+        while (tileContent.length < totalTiles) {
+            tileContent.push('');
         }
-    }
 
-    let myChart = null;
+        // Shuffle the array (Fisher-Yates)
+        for (let i = tileContent.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [tileContent[i], tileContent[j]] = [tileContent[j], tileContent[i]];
+        }
 
-    async function loadLeague() {
-        const leagueId = document.getElementById('leagueIdInput').value;
-        const btn = document.getElementById('loadBtn');
-        const status = document.getElementById('status-box');
-        const errorDiv = document.getElementById('error');
-        const progressContainer = document.getElementById('progress-bar');
-        const progressFill = document.getElementById('progress-fill');
-        const chartWrapper = document.getElementById('chart-wrapper');
-        const legendBox = document.getElementById('custom-legend');
+        const gridElement = document.getElementById('grid');
 
-        if (!leagueId) return alert("Enter a League ID");
-
-        // RESET UI
-        btn.disabled = true;
-        errorDiv.style.display = 'none';
-        chartWrapper.style.display = 'none';
-        legendBox.style.display = 'none';
-        legendBox.innerHTML = '';
-        progressContainer.style.display = 'block';
-        progressFill.style.width = '0%';
-        status.innerText = "Finding League...";
-
-        try {
-            // 1. Get League
-            const leagueData = await robustFetch(`${BASE_URL}/leagues-classic/${leagueId}/standings/`);
-            const teams = leagueData.standings.results.slice(0, MAX_TEAMS);
+        // Create the tiles
+        tileContent.forEach((content) => {
+            const tile = document.createElement('div');
+            tile.className = 'tile';
             
-            if (!teams.length) throw new Error("No teams found.");
+            tile.innerHTML = `
+                <div class="tile-face tile-front">?</div>
+                <div class="tile-face tile-back ${content === '' ? 'empty' : ''}">
+                    ${content || '—'}
+                </div>
+            `;
 
-            // 2. Fetch Histories
-            const allTeamHistories = [];
-            let maxGw = 0;
-
-            for (let i = 0; i < teams.length; i++) {
-                const team = teams[i];
-                const pct = Math.round(((i + 1) / teams.length) * 100);
-                progressFill.style.width = `${pct}%`;
-                status.innerText = `Fetching ${i+1}/${teams.length}: ${team.entry_name}`;
-
-                try {
-                    const historyData = await robustFetch(`${BASE_URL}/entry/${team.entry}/history/`);
-                    const history = historyData.current;
-                    if (history.length > maxGw) maxGw = history.length;
-                    
-                    allTeamHistories.push({
-                        name: team.player_name + " (" + team.entry_name + ")",
-                        history: history,
-                        id: team.entry
-                    });
-                } catch (e) { console.warn(e); }
-                await new Promise(r => setTimeout(r, DELAY_MS));
-            }
-
-            // 3. Calc Averages
-            status.innerText = "Processing Data...";
-            const gwAverages = [];
-            for (let gw = 0; gw < maxGw; gw++) {
-                let sum = 0, count = 0;
-                allTeamHistories.forEach(t => {
-                    if (t.history[gw]) { sum += t.history[gw].total_points; count++; }
-                });
-                gwAverages[gw] = count > 0 ? (sum / count) : 0;
-            }
-
-            // 4. Build Datasets
-            const datasets = allTeamHistories.map((team, index) => {
-                const data = [];
-                for(let gw = 0; gw < maxGw; gw++) {
-                     if (team.history[gw]) {
-                         data.push(team.history[gw].total_points - gwAverages[gw]);
-                     } else {
-                         data.push(null);
-                     }
-                }
-                const hue = (index / teams.length) * 360;
-                return {
-                    label: team.name,
-                    data: data,
-                    borderColor: `hsl(${hue}, 70%, 50%)`,
-                    backgroundColor: `hsl(${hue}, 70%, 50%)`,
-                    borderWidth: 2,
-                    pointRadius: 0,
-                    tension: 0.4,
-                    fill: false
-                };
+            tile.addEventListener('click', () => {
+                tile.classList.toggle('flipped');
             });
 
-            // 5. Render
-            renderChart(datasets, maxGw);
-            generateCustomLegend(datasets);
-
-            status.innerText = "Done! (Tap name below to hide/show)";
-            chartWrapper.style.display = 'block';
-            legendBox.style.display = 'grid'; // Enable Grid layout for legend
-            progressContainer.style.display = 'none';
-
-        } catch (err) {
-            console.error(err);
-            errorDiv.innerText = "Error: " + err.message;
-            errorDiv.style.display = 'block';
-        } finally {
-            btn.disabled = false;
-        }
-    }
-
-    function renderChart(datasets, maxGw) {
-        const ctx = document.getElementById('myChart').getContext('2d');
-        if (myChart) myChart.destroy();
-
-        const labels = Array.from({length: maxGw}, (_, i) => `GW${i+1}`);
-
-        myChart = new Chart(ctx, {
-            type: 'line',
-            data: { labels, datasets },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false, // Critical for mobile
-                interaction: { mode: 'index', intersect: false },
-                plugins: {
-                    legend: { display: false }, // Hide default legend
-                    tooltip: {
-                        bodyFont: { size: 11 },
-                        titleFont: { size: 11 },
-                        callbacks: {
-                            label: function(context) {
-                                let label = context.dataset.label || '';
-                                if (label) label += ': ';
-                                if (context.parsed.y !== null) {
-                                    const val = context.parsed.y.toFixed(1);
-                                    label += (val > 0 ? '+' : '') + val;
-                                }
-                                return label;
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    x: { grid: { display: false }, ticks: { font: { size: 10 } } },
-                    y: {
-                        grid: {
-                            color: (ctx) => ctx.tick.value === 0 ? '#ff0000' : '#f0f0f0',
-                            lineWidth: (ctx) => ctx.tick.value === 0 ? 1.5 : 1,
-                        },
-                        ticks: { font: { size: 10 } }
-                    }
-                }
-            }
+            gridElement.appendChild(tile);
         });
-    }
-
-    function generateCustomLegend(datasets) {
-        const container = document.getElementById('custom-legend');
-        container.innerHTML = '';
-
-        datasets.forEach((ds, index) => {
-            const item = document.createElement('div');
-            item.className = 'legend-item';
-            
-            const dot = document.createElement('div');
-            dot.className = 'color-dot';
-            dot.style.backgroundColor = ds.borderColor;
-
-            const text = document.createElement('span');
-            // Clean name: "Full Name (Team Name)" -> Just "Full Name" to save space on mobile?
-            // Or just keep it as is but truncate via CSS if needed.
-            text.innerText = ds.label.split('(')[0].trim(); 
-            text.style.whiteSpace = 'nowrap';
-            text.style.overflow = 'hidden';
-            text.style.textOverflow = 'ellipsis';
-            text.style.fontSize = '11px';
-
-            item.appendChild(dot);
-            item.appendChild(text);
-
-            item.onclick = () => {
-                // Toggle Chart Vis
-                const isHidden = !myChart.isDatasetVisible(index);
-                myChart.setDatasetVisibility(index, isHidden);
-                myChart.update();
-                
-                // Toggle UI style
-                if (isHidden) item.classList.remove('hidden');
-                else item.classList.add('hidden');
-            };
-
-            container.appendChild(item);
-        });
-    }
-</script>
-
+    </script>
 </body>
 </html>
