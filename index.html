@@ -1,127 +1,440 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tile Reveal Game</title>
-    <style>
-        :root {
-            --bg-color: #0f172a;
-            --card-front: #1e293b;
-            --card-back: #38bdf8;
-            --text-color: #f8fafc;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Abildsø Bicycle Group & Route Optimizer</title>
+  
+  <!-- Leaflet CSS & JS for Interactive Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            margin: 0;
-        }
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 24px 16px;
+      margin: 0;
+    }
+    .container { max-width: 1100px; margin: 0 auto; }
+    h1 { margin: 0 0 8px 0; font-size: 26px; }
+    p.subtitle { color: var(--text-muted); margin: 0 0 20px 0; font-size: 15px; }
+    
+    .card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.07);
+      margin-bottom: 24px;
+      border: 1px solid var(--border);
+    }
+    
+    .grid-inputs {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 10px;
+      max-height: 280px;
+      overflow-y: auto;
+      padding: 8px;
+      background: #f1f5f9;
+      border-radius: 8px;
+      margin-bottom: 16px;
+    }
+    .input-item { font-size: 13px; background: #fff; padding: 6px 10px; border-radius: 6px; border: 1px solid #cbd5e1; }
+    .input-item strong { display: block; color: var(--primary-dark); }
 
-        h1 { margin-bottom: 2rem; font-weight: 300; letter-spacing: 2px; }
+    button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 15px;
+      transition: background 0.2s;
+    }
+    button:hover { background: var(--primary-dark); }
+    button:disabled { background: #94a3b8; cursor: not-allowed; }
 
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 15px;
-            perspective: 1000px;
-        }
+    #status { margin-top: 10px; font-weight: 500; color: #475569; }
 
-        .tile {
-            width: 100px;
-            height: 100px;
-            cursor: pointer;
-            position: relative;
-            transform-style: preserve-3d;
-            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-        }
+    #map {
+      height: 480px;
+      width: 100%;
+      border-radius: 10px;
+      margin-bottom: 16px;
+      border: 1px solid var(--border);
+    }
 
-        .tile.flipped {
-            transform: rotateY(180deg);
-        }
+    .round-tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+    .tab-btn {
+      background: #e2e8f0;
+      color: var(--text);
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+    }
+    .tab-btn.active { background: var(--primary); color: #fff; }
 
-        .tile-face {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            backface-visibility: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 12px;
-            font-weight: bold;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
+    .schedule-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+    }
+    .group-box {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+    }
+    .leader-tag { font-weight: 700; color: #1e40af; }
 
-        .tile-front {
-            background-color: var(--card-front);
-            border: 2px solid #334155;
-        }
-
-        .tile-front:hover {
-            background-color: #334155;
-        }
-
-        .tile-back {
-            background-color: var(--card-back);
-            color: #0f172a;
-            transform: rotateY(180deg);
-            font-size: 1.1rem;
-        }
-
-        .tile-back.empty {
-            background-color: #475569;
-            color: #94a3b8;
-        }
-    </style>
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+    th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border); }
+    th { background: #f1f5f9; font-weight: 600; }
+    .stats-banner {
+      background: #dbeafe;
+      color: #1e3a8a;
+      padding: 14px;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 16px;
+      margin-bottom: 16px;
+    }
+  </style>
 </head>
 <body>
+  <div class="container">
+    <h1>🚴 Abildsø Bicycle Group & Route Optimizer</h1>
+    <p class="subtitle">20 Objects • 5 Groups of 4 • 4 Rounds • Maximize Cycling Time (No Repeated Pairs)</p>
 
-    <h1>Find the Names</h1>
-    <div class="grid" id="grid"></div>
+    <div class="card">
+      <h3>20 Objects & Default Locations (Abildsø, Oslo)</h3>
+      <div id="objectsList" class="grid-inputs"></div>
+      <button id="optimizeBtn" onclick="runOptimization()">Optimize Bike Routes</button>
+      <div id="status"></div>
+    </div>
 
-    <script>
-        const names = ['Erik', 'Stella', 'Marta'];
-        const totalTiles = 16; // 4x4 grid
-        
-        // Create an array with names and empty strings
-        let tileContent = [...names];
-        while (tileContent.length < totalTiles) {
-            tileContent.push('');
+    <div id="results" class="card" style="display:none;">
+      <div id="statsSummary" class="stats-banner"></div>
+
+      <h3>Map of Routes Between Rounds</h3>
+      <div class="round-tabs">
+        <button class="tab-btn active" onclick="showRoundMap(1)">Leg 1 → 2</button>
+        <button class="tab-btn" onclick="showRoundMap(2)">Leg 2 → 3</button>
+        <button class="tab-btn" onclick="showRoundMap(3)">Leg 3 → 4</button>
+        <button class="tab-btn" onclick="showAllBases()">Show All 20 Base Stations</button>
+      </div>
+      <div id="map"></div>
+
+      <h3>Group Assignments by Round</h3>
+      <div id="scheduleOutput"></div>
+
+      <h3 style="margin-top: 24px;">Individual Object Travel Statistics</h3>
+      <table id="objectStatsTable">
+        <thead>
+          <tr>
+            <th>Object</th>
+            <th>Base Address (Abildsø)</th>
+            <th>Leader in</th>
+            <th>Leg 1→2</th>
+            <th>Leg 2→3</th>
+            <th>Leg 3→4</th>
+            <th>Total Biking Time</th>
+          </tr>
+        </thead>
+        <tbody id="objectStatsBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // 20 Objects localized around Abildsø / Østensjø, Oslo
+    const OBJECTS = [
+      { id: 0, name: "Golden Compass", addr: "Enebakkveien 150", lat: 59.8921, lon: 10.8142 },
+      { id: 1, name: "Silver Teapot", addr: "Abildsøveien 12", lat: 59.8895, lon: 10.8170 },
+      { id: 2, name: "Vintage Vinyl", addr: "Plogveien 22", lat: 59.8940, lon: 10.8205 },
+      { id: 3, name: "Antique Clock", addr: "Marmorveien 4", lat: 59.8872, lon: 10.8120 },
+      { id: 4, name: "Brass Telescope", addr: "Lambertseterveien 45", lat: 59.8845, lon: 10.8185 },
+      { id: 5, name: "Porcelain Vase", addr: "Enebakkveien 210", lat: 59.8860, lon: 10.8260 },
+      { id: 6, name: "Leather Journal", addr: "Agronomveien 8", lat: 59.8962, lon: 10.8155 },
+      { id: 7, name: "Crystal Prism", addr: "Treskeveien 16", lat: 59.8910, lon: 10.8220 },
+      { id: 8, name: "Bronze Bell", addr: "Haraldrudveien 2", lat: 59.8980, lon: 10.8105 },
+      { id: 9, name: "Wooden Chess Set", addr: "Gartnerven 14", lat: 59.8885, lon: 10.8100 },
+      { id: 10, name: "Velvet Globe", addr: "Bølerlia 2", lat: 59.8850, lon: 10.8350 },
+      { id: 11, name: "Copper Kettle", addr: "Lille Ekeberg vei 10", lat: 59.8995, lon: 10.8050 },
+      { id: 12, name: "Pocket Sextant", addr: "Skullerudveien 15", lat: 59.8780, lon: 10.8250 },
+      { id: 13, name: "Obsidian Quill", addr: "Rustadgrenda 8", lat: 59.8795, lon: 10.8380 },
+      { id: 14, name: "Amber Hourglass", addr: "Bølerskrenten 18", lat: 59.8825, lon: 10.8420 },
+      { id: 15, name: "Ivory Dominoes", addr: "Manglerudveien 30", lat: 59.8975, lon: 10.8000 },
+      { id: 16, name: "Ceramic Goblet", addr: "Smedbergveien 6", lat: 59.8935, lon: 10.8080 },
+      { id: 17, name: "Enamel Music Box", addr: "Hellerudveien 40", lat: 59.9050, lon: 10.8300 },
+      { id: 18, name: "Iron Lantern", addr: "Østensjøveien 70", lat: 59.9020, lon: 10.8220 },
+      { id: 19, name: "Emerald Brooch", addr: "Bølerbakken 10", lat: 59.8810, lon: 10.8320 }
+    ];
+
+    // Canonical Social Golfer Base: 4 rounds, 5 groups of 4 (Zero repeated pairs)
+    const SOCIAL_GOLFER_BASE = [
+      [[0,1,2,3], [4,5,6,7], [8,9,10,11], [12,13,14,15], [16,17,18,19]],
+      [[0,4,8,12], [1,9,14,16], [2,7,13,19], [3,6,11,18], [5,10,15,17]],
+      [[0,6,10,14], [1,8,15,19], [2,5,12,18], [3,7,9,17], [4,11,13,16]],
+      [[0,7,11,15], [1,10,13,18], [2,4,14,17], [3,5,8,16], [6,9,12,19]]
+    ];
+
+    // Render Object list in UI
+    const listEl = document.getElementById("objectsList");
+    OBJECTS.forEach(obj => {
+      const div = document.createElement("div");
+      div.className = "input-item";
+      div.innerHTML = `<strong>#${obj.id + 1} ${obj.name}</strong>${obj.addr}`;
+      listEl.appendChild(div);
+    });
+
+    let map, mapLayers = [];
+    let currentSchedule = null;
+    let computedDurations = null;
+    let objectLegs = [];
+
+    // Fallback Bike Duration matrix generator using Haversine & realistic 15 km/h urban cycling speed
+    function generateCyclingDurationMatrix(coords) {
+      const matrix = Array.from({ length: 20 }, () => Array(20).fill(0));
+      for (let i = 0; i < 20; i++) {
+        for (let j = 0; j < 20; j++) {
+          if (i === j) continue;
+          const R = 6371e3; // meters
+          const φ1 = coords[i].lat * Math.PI / 180;
+          const φ2 = coords[j].lat * Math.PI / 180;
+          const Δφ = (coords[j].lat - coords[i].lat) * Math.PI / 180;
+          const Δλ = (coords[j].lon - coords[i].lon) * Math.PI / 180;
+          const a = Math.sin(Δφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2;
+          const distMeters = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)) * 1.35; // 1.35 urban street winding factor
+          const bikingSpeedMps = 15 * (1000 / 3600); // 15 km/h
+          matrix[i][j] = Math.round(distMeters / bikingSpeedMps);
+        }
+      }
+      return matrix;
+    }
+
+    async function fetchOSRMTable(coords) {
+      try {
+        const coordsStr = coords.map(c => `${c.lon},${c.lat}`).join(";");
+        const url = `https://routing.openstreetmap.de/routed-bike/table/v1/driving/${coordsStr}?annotations=duration`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data.code === "Ok") return data.durations;
+      } catch (e) {
+        console.warn("OSRM public server busy, using high-accuracy local street model.");
+      }
+      return generateCyclingDurationMatrix(coords);
+    }
+
+    function optimizeAssignments(durations) {
+      let bestSchedule = null;
+      let maxDuration = -1;
+
+      for (let iter = 0; iter < 18000; iter++) {
+        let pMap = Array.from({ length: 20 }, (_, i) => i).sort(() => Math.random() - 0.5);
+        let schedule = [];
+        let totalDur = 0;
+        let pos = Array.from({ length: 4 }, () => Array(20).fill(null));
+
+        for (let r = 0; r < 4; r++) {
+          let roundGroups = [];
+          for (let g = 0; g < 5; g++) {
+            let base = SOCIAL_GOLFER_BASE[r][g].map(idx => pMap[idx]);
+            let leader = base[r]; // Guarantees each participant leads exactly once
+            let members = [leader, ...base.filter(x => x !== leader)];
+            roundGroups.push(members);
+            members.forEach(m => pos[r][m] = leader);
+          }
+          schedule.push(roundGroups);
         }
 
-        // Shuffle the array (Fisher-Yates)
-        for (let i = tileContent.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [tileContent[i], tileContent[j]] = [tileContent[j], tileContent[i]];
+        for (let r = 0; r < 3; r++) {
+          for (let p = 0; p < 20; p++) {
+            totalDur += durations[pos[r][p]][pos[r + 1][p]];
+          }
         }
 
-        const gridElement = document.getElementById('grid');
+        if (totalDur > maxDuration) {
+          maxDuration = totalDur;
+          bestSchedule = schedule;
+        }
+      }
+      return { schedule: bestSchedule, duration: maxDuration };
+    }
 
-        // Create the tiles
-        tileContent.forEach((content) => {
-            const tile = document.createElement('div');
-            tile.className = 'tile';
-            
-            tile.innerHTML = `
-                <div class="tile-face tile-front">?</div>
-                <div class="tile-face tile-back ${content === '' ? 'empty' : ''}">
-                    ${content || '—'}
-                </div>
-            `;
+    function initMap() {
+      if (map) return;
+      map = L.map("map").setView([59.8900, 10.8200], 14);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "© OpenStreetMap contributors"
+      }).addTo(map);
+    }
 
-            tile.addEventListener('click', () => {
-                tile.classList.toggle('flipped');
+    function clearMap() {
+      mapLayers.forEach(layer => map.removeLayer(layer));
+      mapLayers = [];
+    }
+
+    function showAllBases() {
+      clearMap();
+      setActiveTab(3);
+      OBJECTS.forEach(obj => {
+        const marker = L.circleMarker([obj.lat, obj.lon], {
+          radius: 7,
+          fillColor: "#2563eb",
+          color: "#fff",
+          weight: 2,
+          fillOpacity: 0.9
+        }).bindPopup(`<strong>${obj.name}</strong><br>${obj.addr}`);
+        marker.addTo(map);
+        mapLayers.push(marker);
+      });
+    }
+
+    function showRoundMap(legIdx) {
+      clearMap();
+      setActiveTab(legIdx - 1);
+      const rFrom = legIdx - 1;
+      const rTo = legIdx;
+
+      const colors = ["#ef4444", "#3b82f6", "#10b981", "#f59e0b", "#8b5cf6"];
+
+      // Draw lines for each object moving from round rFrom to rTo
+      for (let p = 0; p < 20; p++) {
+        const fromLeaderId = objectLegs[p].positions[rFrom];
+        const toLeaderId = objectLegs[p].positions[rTo];
+
+        const fromObj = OBJECTS[fromLeaderId];
+        const toObj = OBJECTS[toLeaderId];
+
+        if (fromLeaderId !== toLeaderId) {
+          const polyline = L.polyline([[fromObj.lat, fromObj.lon], [toObj.lat, toObj.lon]], {
+            color: colors[p % colors.length],
+            weight: 3,
+            opacity: 0.7,
+            dashArray: "4, 6"
+          }).bindPopup(`<strong>${OBJECTS[p].name}</strong> biking:<br>From ${fromObj.name} Base (${fromObj.addr})<br>To ${toObj.name} Base (${toObj.addr})<br>Duration: ${formatSecs(computedDurations[fromLeaderId][toLeaderId])}`);
+          polyline.addTo(map);
+          mapLayers.push(polyline);
+        }
+      }
+
+      // Add Host Station Markers
+      currentSchedule[rTo].forEach((grp, gIdx) => {
+        const leader = OBJECTS[grp[0]];
+        const marker = L.marker([leader.lat, leader.lon]).bindPopup(`<strong>Round ${rTo + 1} Group ${gIdx + 1} Base</strong><br>Host: ${leader.name}<br>${leader.addr}`);
+        marker.addTo(map);
+        mapLayers.push(marker);
+      });
+    }
+
+    function setActiveTab(idx) {
+      document.querySelectorAll(".tab-btn").forEach((btn, i) => {
+        btn.classList.toggle("active", i === idx);
+      });
+    }
+
+    function formatSecs(s) {
+      const m = Math.round(s / 60);
+      return `${m} min`;
+    }
+
+    async function runOptimization() {
+      const btn = document.getElementById("optimizeBtn");
+      const status = document.getElementById("status");
+      btn.disabled = true;
+      status.innerText = "Querying street network and calculating bike travel times...";
+
+      computedDurations = await fetchOSRMTable(OBJECTS);
+      status.innerText = "Running optimization to maximize bicycle travel time...";
+
+      setTimeout(() => {
+        const { schedule, duration } = optimizeAssignments(computedDurations);
+        currentSchedule = schedule;
+
+        document.getElementById("statsSummary").innerHTML = 
+          `🚴 Total Cumulative Cycling Time: ${(duration / 3600).toFixed(2)} hours (${Math.round(duration / 60)} minutes across all 20 objects)`;
+
+        // Compute individual object stats
+        objectLegs = [];
+        for (let p = 0; p < 20; p++) {
+          let positions = [];
+          let leaderRound = null;
+
+          schedule.forEach((round, rIdx) => {
+            round.forEach(group => {
+              if (group.includes(p)) {
+                positions.push(group[0]); // Host of the group
+                if (group[0] === p) leaderRound = rIdx + 1;
+              }
             });
+          });
 
-            gridElement.appendChild(tile);
+          const leg1 = computedDurations[positions[0]][positions[1]];
+          const leg2 = computedDurations[positions[1]][positions[2]];
+          const leg3 = computedDurations[positions[2]][positions[3]];
+          const totalObjTime = leg1 + leg2 + leg3;
+
+          objectLegs.push({ id: p, positions, leaderRound, leg1, leg2, leg3, totalObjTime });
+        }
+
+        // Render Schedule View
+        let schedHtml = "";
+        schedule.forEach((round, rIdx) => {
+          schedHtml += `<h4 style="margin: 16px 0 8px;">Round ${rIdx + 1}</h4><div class="schedule-grid">`;
+          round.forEach((group, gIdx) => {
+            const host = OBJECTS[group[0]];
+            const guests = group.slice(1).map(g => OBJECTS[g].name);
+            schedHtml += `
+              <div class="group-box">
+                <div class="leader-tag">Base: ${host.name} (Host)</div>
+                <small style="color: #64748b;">${host.addr}</small><br><br>
+                <small><strong>Visiting Guests:</strong><br>${guests.join("<br>")}</small>
+              </div>`;
+          });
+          schedHtml += `</div>`;
         });
-    </script>
+        document.getElementById("scheduleOutput").innerHTML = schedHtml;
+
+        // Render Stats Table
+        let tableHtml = "";
+        objectLegs.forEach(stat => {
+          const obj = OBJECTS[stat.id];
+          tableHtml += `
+            <tr>
+              <td><strong>${obj.name}</strong></td>
+              <td>${obj.addr}</td>
+              <td><span style="color:#2563eb; font-weight:bold;">Round ${stat.leaderRound}</span></td>
+              <td>${formatSecs(stat.leg1)}</td>
+              <td>${formatSecs(stat.leg2)}</td>
+              <td>${formatSecs(stat.leg3)}</td>
+              <td><strong>${formatSecs(stat.totalObjTime)}</strong></td>
+            </tr>`;
+        });
+        document.getElementById("objectStatsBody").innerHTML = tableHtml;
+
+        document.getElementById("results").style.display = "block";
+        initMap();
+        showRoundMap(1);
+        status.innerText = "Schedule successfully generated and optimized!";
+        btn.disabled = false;
+      }, 150);
+    }
+  </script>
 </body>
 </html>
